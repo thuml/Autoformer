@@ -1,6 +1,8 @@
-# Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting (NeurIPS 2021)
+# Autoformer
 
-Time series forecasting is a critical demand for real applications. Enlighted by the classic time series analysis and stochastic process theory, we propose the Autoformer as a general series forecasting model [[paper](https://arxiv.org/abs/2106.13008)]. **Autoformer goes beyond the Transformer family and achieves the series-wise connection for the first time.**
+Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting, [[NeurIPS 2021](https://neurips.cc/)] [[paper](https://arxiv.org/abs/2106.13008)]
+
+Time series forecasting is a critical demand for real applications. Enlighted by the classic time series analysis and stochastic process theory, we propose the Autoformer as a general series forecasting model. **Autoformer goes beyond the Transformer family and achieves the series-wise connection for the first time.**
 
 In long-term forecasting, Autoformer achieves SOTA, with a **38% relative improvement** on six benchmarks, covering five practical applications: **energy, traffic, economics, weather and disease**.
 
@@ -10,13 +12,21 @@ In long-term forecasting, Autoformer achieves SOTA, with a **38% relative improv
 
 We renovate the Transformer as a deep decomposition architecture, which can progressively decompose the trend and seasonal components during the forecasting process.
 
-<img src="./pic/Autoformer.png" alt="Autoformer" style="zoom:50%;" />
+<p align="center">
+<img src=".\pic\Autoformer.png" height = "250" alt="" align=center />
+<br><br>
+<b>Figure 1.</b> Overall architecture of Autoformer.
+</p>
 
 **2. Series-wise Auto-Correlation mechanism**
 
 Inspired by the stochastic process theory, we design the Auto-Correlation mechanism, which can discover period-based dependencies and aggregate the information at the series level. This series-wise connection contrasts clearly from the previous self-attention family.
 
-![Auto-Correlation](./pic/Auto-Correlation.png)
+<p align="center">
+<img src=".\pic\Auto-Correlation.png" height = "250" alt="" align=center />
+<br><br>
+<b>Figure 2.</b> Auto-Correlation mechansim.
+</p>
 
 ## Main Results
 
@@ -24,7 +34,10 @@ We experiment on six benchmarks, covering five main-stream applications. We comp
 
 Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
 
-![results](./pic/results.png)
+<p align="center">
+<img src=".\pic\Results.png" height = "550" alt="" align=center />
+<br><br>
+</p>
 
 ## Get Started
 
