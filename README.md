@@ -30,9 +30,7 @@ Inspired by the stochastic process theory, we design the Auto-Correlation mechan
 
 ## Main Results
 
-We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. 
-
-Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
+We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
 
 <p align="center">
 <img src=".\pic\results.png" height = "550" alt="" align=center />
