@@ -28,14 +28,6 @@ Inspired by the stochastic process theory, we design the Auto-Correlation mechan
 <b>Figure 2.</b> Auto-Correlation mechansim.
 </p>
 
-## Main Results
-
-We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
-
-<p align="center">
-<img src=".\pic\results.png" height = "550" alt="" align=center />
-</p>
-
 ## Get Started
 
 1. Install Python 3.6, PyTorch 1.9.0.
@@ -57,9 +49,17 @@ bash ./scripts/ILI_script/Autoformer.sh
 
 - **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not use the position embedding as the Transformer family.
 
+## Main Results
+
+We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
+
+<p align="center">
+<img src=".\pic\results.png" height = "550" alt="" align=center />
+</p>
+
 ## Citation
 
-If you find this repo useful, please cite our paper.
+If you find this repo useful, please cite our paper. If you have any question or want to use the code, please contact whx20@mails.tsinghua.edu.cn .
 
 ```
 @inproceedings{wu2021autoformer,
