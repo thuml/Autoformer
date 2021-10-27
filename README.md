@@ -47,7 +47,7 @@ bash ./scripts/ILI_script/Autoformer.sh
 
 - **Speedup Auto-Correlation:** We built the Auto-Correlation mechanism as a batch-normalization-style block to make it more memory-access friendly. See the [paper](https://arxiv.org/abs/2106.13008) for details.
 
-- **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not use the position embedding, which is different from Transformers.
+- **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not need the position embedding, which is different from Transformers.
 
 ## Main Results
 
