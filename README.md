@@ -1,8 +1,8 @@
 # Autoformer (NeurIPS 2021)
 
-Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting, NeurIPS 2021 [[paper](https://arxiv.org/abs/2106.13008)]
+Autoformer: Decomposition Transformers with Auto-Correlation for Long-Term Series Forecasting
 
-Time series forecasting is a critical demand for real applications. Enlighted by the classic time series analysis and stochastic process theory, we propose the Autoformer as a general series forecasting model. **Autoformer goes beyond the Transformer family and achieves the series-wise connection for the first time.**
+Time series forecasting is a critical demand for real applications. Enlighted by the classic time series analysis and stochastic process theory, we propose the Autoformer as a general series forecasting model [[paper](https://arxiv.org/abs/2106.13008)]. **Autoformer goes beyond the Transformer family and achieves the series-wise connection for the first time.**
 
 In long-term forecasting, Autoformer achieves SOTA, with a **38% relative improvement** on six benchmarks, covering five practical applications: **energy, traffic, economics, weather and disease**.
 
