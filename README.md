@@ -59,7 +59,7 @@ We experiment on six benchmarks, covering five main-stream applications. We comp
 
 ## Citation
 
-If you find this repo useful, please cite our paper. If you have any question or want to use the code, please contact whx20@mails.tsinghua.edu.cn .
+If you find this repo useful, please cite our paper. 
 
 ```
 @inproceedings{wu2021autoformer,
@@ -69,6 +69,10 @@ If you find this repo useful, please cite our paper. If you have any question or
   year={2021}
 }
 ```
+
+## Contact
+
+If you have any question or want to use the code, please contact whx20@mails.tsinghua.edu.cn .
 
 ## Acknowledgement
 
