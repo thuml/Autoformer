@@ -34,7 +34,6 @@ We experiment on six benchmarks, covering five main-stream applications. We comp
 
 <p align="center">
 <img src=".\pic\results.png" height = "550" alt="" align=center />
-<br><br>
 </p>
 
 ## Get Started
