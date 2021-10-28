@@ -20,7 +20,7 @@ We renovate the Transformer as a deep decomposition architecture, which can prog
 
 **2. Series-wise Auto-Correlation mechanism**
 
-Inspired by the stochastic process theory, we design the Auto-Correlation mechanism, which can discover period-based dependencies and aggregate the information at the series level. This series-wise connection contrasts clearly from the previous self-attention family.
+Inspired by the stochastic process theory, we design the Auto-Correlation mechanism, which can discover period-based dependencies and aggregate the information at the series level. This empowers the model with inherent log-linear complexity. This series-wise connection contrasts clearly from the previous self-attention family.
 
 <p align="center">
 <img src=".\pic\Auto-Correlation.png" height = "250" alt="" align=center />
