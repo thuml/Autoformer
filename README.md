@@ -49,17 +49,6 @@ bash ./scripts/ILI_script/Autoformer.sh
 
 - **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not need the position embedding, which is different from Transformers.
 
-## Baselines
-
-We will keep adding series forecasting models to expand the repo:
-
--[x] Autoformer
--[x] Informer
--[x] Transformer
--[] LogTrans
--[] Reformer
--[] N-BEATS
-
 ## Main Results
 
 We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
@@ -67,6 +56,17 @@ We experiment on six benchmarks, covering five main-stream applications. We comp
 <p align="center">
 <img src=".\pic\results.png" height = "550" alt="" align=center />
 </p>
+
+## Baselines
+
+We will keep adding series forecasting models to expand the repo:
+
+- [x] Autoformer
+- [x] Informer
+- [x] Transformer
+- [ ] LogTrans
+- [ ] Reformer
+- [ ] N-BEATS
 
 ## Citation
 
