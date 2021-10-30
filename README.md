@@ -59,7 +59,7 @@ We experiment on six benchmarks, covering five main-stream applications. We comp
 
 ## Baselines
 
-We will keep adding series forecasting models to expand the repo:
+We will keep adding series forecasting models to expand this repo:
 
 - [x] Autoformer
 - [x] Informer
