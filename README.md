@@ -42,7 +42,14 @@ bash ./scripts/Traffic_script/Autoformer.sh
 bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
-### Reproducibility
+
+4. Sepcial-designed implementation
+
+- **Speedup Auto-Correlation:** We built the Auto-Correlation mechanism as a batch-normalization-style block to make it more memory-access friendly. See the [paper](https://arxiv.org/abs/2106.13008) for details.
+
+- **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not need the position embedding, which is different from Transformers.
+
+### Reproduce with Docker
 
 To easily reproduce the results using Docker, conda and Make,  you can follow the next steps:
 1. Initialize the docker image using: `make init`. 
@@ -52,12 +59,6 @@ To easily reproduce the results using Docker, conda and Make,  you can follow th
 ```
 for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
 ```
-
-4. Sepcial-designed implementation
-
-- **Speedup Auto-Correlation:** We built the Auto-Correlation mechanism as a batch-normalization-style block to make it more memory-access friendly. See the [paper](https://arxiv.org/abs/2106.13008) for details.
-
-- **Without the position embedding:** Since the series-wise connection will inherently keep the sequential information, Autoformer does not need the position embedding, which is different from Transformers.
 
 ## Main Results
 
