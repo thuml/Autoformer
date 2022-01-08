@@ -42,6 +42,16 @@ bash ./scripts/Traffic_script/Autoformer.sh
 bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
+### Reproducibility
+
+To easily reproduce the results using Docker, conda and Make,  you can follow the next steps:
+1. Initialize the docker image using: `make init`. 
+2. Download the datasets using: `make get_dataset`.
+3. Run each script in `scripts/` using `make run_module module="bash scripts/ETT_script/Autoformer_ETTm1.sh"` for each script.
+4. Alternatively, run all the scripts at once:
+```
+for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
+```
 
 4. Sepcial-designed implementation
 
