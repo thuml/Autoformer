@@ -1,0 +1,14 @@
+name: autoformer
+channels:
+  - conda-forge
+  - pytorch
+  - defaults
+dependencies:
+  - python=3.7
+  - pip
+  - matplotlib
+  - numpy
+  - pandas
+  - scikit-learn
+  - pip:
+    - torch==1.9.0
