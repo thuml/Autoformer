@@ -77,8 +77,8 @@ We will keep adding series forecasting models to expand this repo:
 - [x] Autoformer
 - [x] Informer
 - [x] Transformer
+- [x] Reformer
 - [ ] LogTrans
-- [ ] Reformer
 - [ ] N-BEATS
 
 ## Citation
