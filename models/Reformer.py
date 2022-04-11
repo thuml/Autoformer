@@ -11,9 +11,9 @@ class Model(nn.Module):
     """
     Reformer with O(LlogL) complexity
     - It is notable that Reformer is not proposed for time series forecasting, in that it cannot accomplish the cross attention.
-    - Here is only one adaption in BERT-style, other possible implementations can also be acceptable
+    - Here is only one adaption in BERT-style, other possible implementations can also be acceptable.
     - The hyper-parameters, such as bucket_size and n_hashes, need to be further tuned.
-    The official repo of Reformer (https://github.com/lucidrains/reformer-pytorch) can be very helpful, if you have any question.
+    The official repo of Reformer (https://github.com/lucidrains/reformer-pytorch) can be very helpful, if you have any questiones.
     """
 
     def __init__(self, configs):
