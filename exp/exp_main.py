@@ -75,6 +75,7 @@ class Exp_Main(Exp_Basic):
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 f_dim = -1 if self.args.features == 'MS' else 0
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                 pred = outputs.detach().cpu()
@@ -135,6 +136,7 @@ class Exp_Main(Exp_Basic):
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                         f_dim = -1 if self.args.features == 'MS' else 0
+                        outputs = outputs[:, -self.args.pred_len:, f_dim:]
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                         loss = criterion(outputs, batch_y)
                         train_loss.append(loss.item())
@@ -145,6 +147,7 @@ class Exp_Main(Exp_Basic):
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_y)
 
                     f_dim = -1 if self.args.features == 'MS' else 0
+                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
@@ -223,7 +226,7 @@ class Exp_Main(Exp_Basic):
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                 f_dim = -1 if self.args.features == 'MS' else 0
-
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                 outputs = outputs.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
@@ -285,7 +288,7 @@ class Exp_Main(Exp_Basic):
                 batch_y_mark = batch_y_mark.float().to(self.device)
 
                 # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.zeros([batch_y.shape[0], self.args.pred_len, batch_y.shape[2]]).float()
                 dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
                 # encoder - decoder
                 if self.args.use_amp:
