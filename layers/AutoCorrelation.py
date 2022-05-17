@@ -61,8 +61,7 @@ class AutoCorrelation(nn.Module):
         # find top k
         top_k = int(self.factor * math.log(length))
         mean_value = torch.mean(torch.mean(corr, dim=1), dim=1)
-        weights = torch.topk(mean_value, top_k, dim=-1)[0]
-        delay = torch.topk(mean_value, top_k, dim=-1)[1]
+        weights, delay = torch.topk(mean_value, top_k, dim=-1)
         # update corr
         tmp_corr = torch.softmax(weights, dim=-1)
         # aggregation
@@ -87,8 +86,7 @@ class AutoCorrelation(nn.Module):
         init_index = torch.arange(length).unsqueeze(0).unsqueeze(0).unsqueeze(0).repeat(batch, head, channel, 1).cuda()
         # find top k
         top_k = int(self.factor * math.log(length))
-        weights = torch.topk(corr, top_k, dim=-1)[0]
-        delay = torch.topk(corr, top_k, dim=-1)[1]
+        weights, delay = torch.topk(corr, top_k, dim=-1)
         # update corr
         tmp_corr = torch.softmax(weights, dim=-1)
         # aggregation
