@@ -61,9 +61,8 @@ To easily reproduce the results using Docker, conda and Make,  you can follow th
 ```
 for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
 ```
-
 ### Simple Case
-See predict.ipynb for workflow
+See `predict.ipynb` for workflow.
 
 ## Main Results
 
