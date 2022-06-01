@@ -62,6 +62,9 @@ To easily reproduce the results using Docker, conda and Make,  you can follow th
 for file in `ls scripts`; do make run_module module="bash scripts/$script"; done
 ```
 
+### Simple Case
+See predict.ipynb for workflow
+
 ## Main Results
 
 We experiment on six benchmarks, covering five main-stream applications. We compare our model with ten baselines, including Informer, N-BEATS, etc. Generally, for the long-term forecasting setting, Autoformer achieves SOTA, with a **38% relative improvement** over previous baselines.
