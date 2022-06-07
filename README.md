@@ -45,7 +45,7 @@ bash ./scripts/Weather_script/Autoformer.sh
 bash ./scripts/ILI_script/Autoformer.sh
 ```
 
-4. Sepcial-designed implementation
+4. Special-designed implementation
 
 - **Speedup Auto-Correlation:** We built the Auto-Correlation mechanism as a batch-normalization-style block to make it more memory-access friendly. See the [paper](https://arxiv.org/abs/2106.13008) for details.
 
@@ -98,7 +98,7 @@ If you find this repo useful, please cite our paper.
 
 ## Contact
 
-If you have any question or want to use the code, please contact whx20@mails.tsinghua.edu.cn .
+If you have any questions or want to use the code, please contact whx20@mails.tsinghua.edu.cn.
 
 ## Acknowledgement
 
