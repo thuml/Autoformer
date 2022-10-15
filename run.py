@@ -4,7 +4,7 @@ import torch
 from exp.exp_main import Exp_Main
 import random
 import numpy as np
-
+from utils.wandb_logger import generate_wandb_config
 
 def main():
     fix_seed = 2021
@@ -77,6 +77,12 @@ def main():
     parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
+    # Wandb
+    parser.add_argument("--wandb_project_name",
+                        type=str,
+                        help="Wandb project name",
+                        default="TransformersTimeSeries")    
+
     args = parser.parse_args()
 
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -90,6 +96,7 @@ def main():
     print('Args in experiment:')
     print(args)
 
+    generate_wandb_config(args)
     Exp = Exp_Main
 
     if args.is_training:

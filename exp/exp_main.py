@@ -15,6 +15,7 @@ import time
 import warnings
 import matplotlib.pyplot as plt
 import numpy as np
+import wandb
 
 warnings.filterwarnings('ignore')
 
@@ -31,7 +32,7 @@ class Exp_Main(Exp_Basic):
             'Reformer': Reformer,
         }
         model = model_dict[self.args.model].Model(self.args).float()
-
+        wandb.watch(model)
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
@@ -85,6 +86,7 @@ class Exp_Main(Exp_Basic):
 
                 total_loss.append(loss)
         total_loss = np.average(total_loss)
+        wandb.log({"total_loss avg": total_loss})
         self.model.train()
         return total_loss
 
@@ -140,6 +142,7 @@ class Exp_Main(Exp_Basic):
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                         loss = criterion(outputs, batch_y)
                         train_loss.append(loss.item())
+                        wandb.log({"train_loss": train_loss})
                 else:
                     if self.args.output_attention:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -151,6 +154,7 @@ class Exp_Main(Exp_Basic):
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
+                    wandb.log({"train_loss": train_loss})
 
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
