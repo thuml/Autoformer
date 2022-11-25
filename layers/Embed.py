@@ -4,6 +4,29 @@ import torch.nn.functional as F
 from torch.nn.utils import weight_norm
 import math
 
+def compared_version(ver1, ver2):
+    """
+    :param ver1
+    :param ver2
+    :return: ver1< = >ver2返回False/True
+    """
+    list1 = str(ver1).split(".")
+    list2 = str(ver2).split(".")
+    
+    for i in range(len(list1)) if len(list1) < len(list2) else range(len(list2)):
+        if int(list1[i]) == int(list2[i]):
+            pass
+        elif int(list1[i]) < int(list2[i]):
+            return -1
+        else:
+            return 1
+    
+    if len(list1) == len(list2):
+        return True
+    elif len(list1) < len(list2):
+        return False
+    else:
+        return True
 
 class PositionalEmbedding(nn.Module):
     def __init__(self, d_model, max_len=5000):
