@@ -8,7 +8,7 @@ def compared_version(ver1, ver2):
     """
     :param ver1
     :param ver2
-    :return: ver1< = >ver2返回False/True
+    :return: ver1< = >ver2 False/True
     """
     list1 = str(ver1).split(".")
     list2 = str(ver2).split(".")
