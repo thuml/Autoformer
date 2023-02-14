@@ -16,6 +16,8 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+from utils.latex import numpy_to_latex_bmatrix
+
 warnings.filterwarnings('ignore')
 
 

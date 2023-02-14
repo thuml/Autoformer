@@ -1,6 +1,4 @@
 pandas
-sklearn
-torchvision
+scikit-learn
 numpy
 matplotlib
-reformer_pytorch

@@ -12,7 +12,7 @@ def compared_version(ver1, ver2):
     """
     list1 = str(ver1).split(".")
     list2 = str(ver2).split(".")
-    
+
     for i in range(len(list1)) if len(list1) < len(list2) else range(len(list2)):
         if int(list1[i]) == int(list2[i]):
             pass
@@ -20,7 +20,7 @@ def compared_version(ver1, ver2):
             return -1
         else:
             return 1
-    
+
     if len(list1) == len(list2):
         return True
     elif len(list1) < len(list2):
@@ -87,7 +87,7 @@ class TemporalEmbedding(nn.Module):
     def __init__(self, d_model, embed_type='fixed', freq='h'):
         super(TemporalEmbedding, self).__init__()
 
-        minute_size = 4
+        minute_size = 60
         hour_size = 24
         weekday_size = 7
         day_size = 32
