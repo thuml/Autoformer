@@ -18,6 +18,7 @@ python -u run.py \
   --dec_in 1 \
   --c_out 1 \
   --des 'Exp' \
+  --freq 't' \
   --itr 1
 
 python -u run.py \
@@ -39,6 +40,7 @@ python -u run.py \
   --c_out 1 \
   --des 'Exp' \
   --itr 1 \
+  --freq 't' \
   --train_epochs 1
 
 python -u run.py \
@@ -59,6 +61,7 @@ python -u run.py \
   --dec_in 1 \
   --c_out 1 \
   --des 'Exp' \
+  --freq 't' \
   --itr 1
 
 python -u run.py \
@@ -79,4 +82,5 @@ python -u run.py \
   --dec_in 1 \
   --c_out 1 \
   --des 'Exp' \
+  --freq 't' \
   --itr 1
