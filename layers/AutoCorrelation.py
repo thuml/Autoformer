@@ -115,7 +115,7 @@ class AutoCorrelation(nn.Module):
         q_fft = torch.fft.rfft(queries.permute(0, 2, 3, 1).contiguous(), dim=-1)
         k_fft = torch.fft.rfft(keys.permute(0, 2, 3, 1).contiguous(), dim=-1)
         res = q_fft * torch.conj(k_fft)
-        corr = torch.fft.irfft(res, dim=-1)
+        corr = torch.fft.irfft(res, n=L, dim=-1)
 
         # time delay agg
         if self.training:
