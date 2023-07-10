@@ -102,7 +102,7 @@ If you find this repo useful, please cite our paper.
 
 ## Contact
 
-If you have any questions or want to use the code, please contact whx20@mails.tsinghua.edu.cn.
+If you have any questions or want to use the code, please contact wuhx23@mails.tsinghua.edu.cn.
 
 ## Acknowledgement
 
