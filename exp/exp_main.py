@@ -16,6 +16,8 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 
+import wandb
+
 warnings.filterwarnings('ignore')
 
 
@@ -45,11 +47,12 @@ class Exp_Main(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
-        criterion = nn.MSELoss()
-        return criterion
+        #criterion = nn.MSELoss()
+        return lambda x, y: ((x-y)**2).mean(dim=(0, 2))#criterion
 
     def vali(self, vali_data, vali_loader, criterion):
         total_loss = []
+        total_losses = []
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -82,17 +85,20 @@ class Exp_Main(Exp_Basic):
                 true = batch_y.detach().cpu()
 
                 loss = criterion(pred, true)
+                total_loss.append(loss.mean().item())
+                total_losses.append(loss.cpu().numpy())
 
-                total_loss.append(loss)
         total_loss = np.average(total_loss)
+        total_losses = np.stack(total_losses)
         self.model.train()
-        return total_loss
+        return total_loss, total_losses.mean(axis=0)
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
-
+        multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
+        perturbations = torch.zeros(self.args.pred_len, device=self.device)
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
@@ -111,6 +117,7 @@ class Exp_Main(Exp_Basic):
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
+            train_losses = []
 
             self.model.train()
             epoch_time = time.time()
@@ -139,7 +146,7 @@ class Exp_Main(Exp_Basic):
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
                         batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                         loss = criterion(outputs, batch_y)
-                        train_loss.append(loss.item())
+                        train_loss.append(loss.mean().item())
                 else:
                     if self.args.output_attention:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
@@ -149,9 +156,14 @@ class Exp_Main(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    loss = criterion(outputs, batch_y)
-                    train_loss.append(loss.item())
-
+                    loss_all = criterion(outputs, batch_y)
+                    train_losses.append(loss_all.cpu().detach())
+                    train_loss.append(loss_all.mean().item())
+                    loss = (loss_all*multipliers).sum()
+                    if self.args.dual_lr>0:
+                        multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level-perturbations)).clamp(min=0.)
+                    if self.args.resilient_lr>0:
+                        perturbations = (perturbations+self.args.resilient_lr*(self.args.resilient_alpha*self.args.resilient_beta*(perturbations**(self.args.resilient_beta-1.0))-multipliers))#.clamp(min=0.)
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -170,11 +182,28 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
+            train_losses = np.stack(train_losses)
+            train_losses = np.average(train_losses, axis=0)
+            vali_loss, vali_losses = self.vali(vali_data, vali_loader, criterion)
+            test_loss, test_losses = self.vali(test_data, test_loader, criterion)
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            #print(f"Train Loss[:10]: {train_losses[:10]}")
+            #print(f"Val Loss[:10]: {vali_losses[:10]}")
+            #print(f"Test Loss[:10]: {test_losses[:10]}")
+            #print(f"Train Loss[-10:]: {train_losses[-10:]}")
+            #print(f"Val Loss[-10:]: {vali_losses[-10:]}")
+            #print(f"Test Loss[-10:]: {test_losses[-10:]}")
+            for split, losses in zip(["train", "val", "test"],[train_losses, vali_losses, test_losses]):
+                for i, loss in enumerate(losses):
+                    wandb.log({f"mse/{split}/{i}": loss, "epoch":epoch+1})
+
+            for i, multiplier in enumerate(multipliers):
+                wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1})
+            for i, perturbation in enumerate(perturbations):
+                wandb.log({f"perturbation/{i}": perturbation, "epoch":epoch+1})
+
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
                 print("Early stopping")

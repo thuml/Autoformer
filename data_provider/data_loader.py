@@ -205,7 +205,7 @@ class Dataset_Custom(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 2}
+        type_map = {'train': 0, 'val': 1, 'test': 1}
         self.set_type = type_map[flag]
 
         self.features = features

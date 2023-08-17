@@ -5,6 +5,8 @@ from exp.exp_main import Exp_Main
 import random
 import numpy as np
 
+import wandb
+
 
 def main():
     fix_seed = 2021
@@ -77,6 +79,20 @@ def main():
     parser.add_argument('--use_multi_gpu', action='store_true', help='use multiple gpus', default=False)
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
+    # wandb
+    parser.add_argument('--wandb_run', type=str, default='EVAL-shuffle', help='wandb run')    
+    parser.add_argument('--wandb_project', type=str, default='Autoformer', help='wandb project')    
+
+    # Constrained
+    parser.add_argument('--constraint_level', type=float, default=0.5, help='Constraint level (epsilon)')    
+    parser.add_argument('--dual_lr',  type=float, default=0.01, help='dual learning rate')
+    parser.add_argument('--dual_init',  type=float, default=1.0, help='dual var initialization')
+    # Resilient
+    parser.add_argument('--resilient_alpha', type=float, default=2.0, help='Constraint level (epsilon)')    
+    parser.add_argument('--resilient_beta',  type=float, default=2.0, help='dual learning rate')
+    parser.add_argument('--resilient_lr',  type=float, default=1.0, help='dual var initialization')
+    args = parser.parse_args()
+    
     args = parser.parse_args()
 
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
@@ -89,6 +105,7 @@ def main():
 
     print('Args in experiment:')
     print(args)
+    wandb.init(name=args.wandb_run, project="Autoformer", config=args)
 
     Exp = Exp_Main
 
