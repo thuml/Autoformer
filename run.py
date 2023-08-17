@@ -87,10 +87,6 @@ def main():
     parser.add_argument('--constraint_level', type=float, default=0.5, help='Constraint level (epsilon)')    
     parser.add_argument('--dual_lr',  type=float, default=0.01, help='dual learning rate')
     parser.add_argument('--dual_init',  type=float, default=1.0, help='dual var initialization')
-    # Resilient
-    parser.add_argument('--resilient_alpha', type=float, default=2.0, help='Constraint level (epsilon)')    
-    parser.add_argument('--resilient_beta',  type=float, default=2.0, help='dual learning rate')
-    parser.add_argument('--resilient_lr',  type=float, default=1.0, help='dual var initialization')
     args = parser.parse_args()
     
     args = parser.parse_args()

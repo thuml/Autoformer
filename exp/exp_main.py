@@ -98,7 +98,6 @@ class Exp_Main(Exp_Basic):
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
         multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
-        perturbations = torch.zeros(self.args.pred_len, device=self.device)
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
@@ -161,9 +160,7 @@ class Exp_Main(Exp_Basic):
                     train_loss.append(loss_all.mean().item())
                     loss = (loss_all*multipliers).sum()
                     if self.args.dual_lr>0:
-                        multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level-perturbations)).clamp(min=0.)
-                    if self.args.resilient_lr>0:
-                        perturbations = (perturbations+self.args.resilient_lr*(self.args.resilient_alpha*self.args.resilient_beta*(perturbations**(self.args.resilient_beta-1.0))-multipliers))#.clamp(min=0.)
+                        multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -201,8 +198,6 @@ class Exp_Main(Exp_Basic):
 
             for i, multiplier in enumerate(multipliers):
                 wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1})
-            for i, perturbation in enumerate(perturbations):
-                wandb.log({f"perturbation/{i}": perturbation, "epoch":epoch+1})
 
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:
