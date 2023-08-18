@@ -101,7 +101,7 @@ def main():
 
     print('Args in experiment:')
     print(args)
-    wandb.init(name=args.wandb_run, project="Autoformer", config=args)
+    wandb.init(name=args.wandb_run, project=args.wandb_project, config=args)
 
     Exp = Exp_Main
 
