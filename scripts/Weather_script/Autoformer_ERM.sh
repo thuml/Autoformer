@@ -1,5 +1,12 @@
 export CUDA_VISIBLE_DEVICES=0
 dual_lr=0
+WANDB_PROJECT='Autoformer-javierdev'
+
+# WANDB_RUN_NAME='ERM'
+WANDB_RUN_NAME='ERM-newloss'
+
+echo "Triggering run $WANDB_RUN_NAME on wandb project $WANDB_PROJECT"
+
 python -u run.py \
   --is_training 1 \
   --root_path ./dataset/weather/ \
@@ -21,7 +28,8 @@ python -u run.py \
   --itr 1 \
   --train_epochs 2 \
   --dual_lr $dual_lr \
-  --wandb_run 'ERM'
+  --wandb_run $WANDB_RUN_NAME \
+  --wandb_project $WANDB_PROJECT
 
 python -u run.py \
   --is_training 1 \
@@ -43,7 +51,8 @@ python -u run.py \
   --des 'Exp' \
   --itr 1 \
   --dual_lr $dual_lr \
-  --wandb_run 'ERM'
+  --wandb_run $WANDB_RUN_NAME \
+  --wandb_project $WANDB_PROJECT
 
 python -u run.py \
   --is_training 1 \
@@ -65,7 +74,8 @@ python -u run.py \
   --des 'Exp' \
   --itr 1 \
   --dual_lr $dual_lr \
-  --wandb_run 'ERM'
+  --wandb_run $WANDB_RUN_NAME \
+  --wandb_project $WANDB_PROJECT
 
 python -u run.py \
   --is_training 1 \
@@ -87,4 +97,5 @@ python -u run.py \
   --des 'Exp' \
   --itr 1 \
   --dual_lr $dual_lr \
-  --wandb_run 'ERM'
+  --wandb_run $WANDB_RUN_NAME \
+  --wandb_project $WANDB_PROJECT

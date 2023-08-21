@@ -91,6 +91,9 @@ def main():
     
     args = parser.parse_args()
 
+    print("Starting run with args")
+    print(args)
+
     args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
 
     if args.use_gpu and args.use_multi_gpu:

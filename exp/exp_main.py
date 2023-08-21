@@ -158,7 +158,8 @@ class Exp_Main(Exp_Basic):
                     loss_all = criterion(outputs, batch_y)
                     train_losses.append(loss_all.cpu().detach())
                     train_loss.append(loss_all.mean().item())
-                    loss = (loss_all*multipliers).sum()
+                    #loss = (loss_all*multipliers).sum()
+                    loss = (multipliers * self.args.constraint_level + 1/self.pred_len) * loss_all
                     if self.args.dual_lr>0:
                         multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
                 if (i + 1) % 100 == 0:
@@ -186,12 +187,12 @@ class Exp_Main(Exp_Basic):
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
-            #print(f"Train Loss[:10]: {train_losses[:10]}")
-            #print(f"Val Loss[:10]: {vali_losses[:10]}")
-            #print(f"Test Loss[:10]: {test_losses[:10]}")
-            #print(f"Train Loss[-10:]: {train_losses[-10:]}")
-            #print(f"Val Loss[-10:]: {vali_losses[-10:]}")
-            #print(f"Test Loss[-10:]: {test_losses[-10:]}")
+            print(f"Train Loss[:10]: {train_losses[:10]}")
+            print(f"Val Loss[:10]: {vali_losses[:10]}")
+            print(f"Test Loss[:10]: {test_losses[:10]}")
+            print(f"Train Loss[-10:]: {train_losses[-10:]}")
+            print(f"Val Loss[-10:]: {vali_losses[-10:]}")
+            print(f"Test Loss[-10:]: {test_losses[-10:]}")
             for split, losses in zip(["train", "val", "test"],[train_losses, vali_losses, test_losses]):
                 for i, loss in enumerate(losses):
                     wandb.log({f"mse/{split}/{i}": loss, "epoch":epoch+1})
