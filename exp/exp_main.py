@@ -159,7 +159,7 @@ class Exp_Main(Exp_Basic):
                     train_losses.append(loss_all.cpu().detach())
                     train_loss.append(loss_all.mean().item())
                     #loss = (loss_all*multipliers).sum()
-                    loss = (multipliers * self.args.constraint_level + 1/self.pred_len) * loss_all
+                    loss = ((multipliers + 1/self.args.pred_len) * loss_all).sum()
                     if self.args.dual_lr>0:
                         multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
                 if (i + 1) % 100 == 0:
