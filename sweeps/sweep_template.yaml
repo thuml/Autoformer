@@ -1,0 +1,54 @@
+program: run.py
+method: grid
+metric:
+  name: mse/test
+  goal: minimize
+parameters:
+  wandb_run:
+    value: "ERM"
+  wandb_project: 
+    value: "Autoformer-javierdev"
+  constraint_level:
+    value: 0.45
+  dual_init:
+    value: 1.0
+  dual_lr:
+    value: 0.01
+  is_training:
+    value: "1"
+  root_path:
+    value: "./dataset/weather/"
+  data_path:
+    value: "weather.csv"
+  model_id:
+    value: "weather_96_96"
+  model:
+    value: "Reformer"
+  data:
+    value: "custom"
+  features:
+    value: "M"
+  seq_len:
+    value: 96
+  label_len:
+    value: 48
+  pred_len:
+    value: 96
+  e_layers:
+    value: 2
+  d_layers:
+    value: 1
+  factor:
+    value: 3
+  enc_in:
+    value: 21
+  dec_in:
+    value: 21
+  c_out:
+    value: 21
+  des:
+    value: "Exp Javier"
+  itr:
+    value: 1
+  train_epochs:
+    value: 3

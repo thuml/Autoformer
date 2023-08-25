@@ -1,6 +1,7 @@
+
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
-from models import Informer, Autoformer, Transformer, Reformer
+from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
@@ -31,6 +32,8 @@ class Exp_Main(Exp_Basic):
             'Transformer': Transformer,
             'Informer': Informer,
             'Reformer': Reformer,
+            'Linear': Linear,
+            'DLinear': DLinear,
         }
         model = model_dict[self.args.model].Model(self.args).float()
 
@@ -51,8 +54,11 @@ class Exp_Main(Exp_Basic):
         return lambda x, y: ((x-y)**2).mean(dim=(0, 2))#criterion
 
     def vali(self, vali_data, vali_loader, criterion):
+        "Javier: this returns overall mean loss, average losses per step, and overall average metrics."
         total_loss = []
         total_losses = []
+        total_metrics=[]
+        total_infeasibilities = []
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -84,14 +90,32 @@ class Exp_Main(Exp_Basic):
                 pred = outputs.detach().cpu()
                 true = batch_y.detach().cpu()
 
+                # Compute metrics (detach and convert to numpy)
+                mae, mse, rmse, mape, mspe = metric(pred=outputs.detach().cpu().numpy(), true=batch_y.detach().cpu().numpy())
+
                 loss = criterion(pred, true)
+                
+                #TODO verify this logic and reenable. 
+                vali_num_infeasibles = (loss > self.args.constraint_level).sum()
+                #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
+
+                #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
+
                 total_loss.append(loss.mean().item())
                 total_losses.append(loss.cpu().numpy())
+                total_metrics.append([mae, mse, rmse, mape, mspe])
+                total_infeasibilities.append(vali_num_infeasibles)
 
         total_loss = np.average(total_loss)
         total_losses = np.stack(total_losses)
+        total_metrics = np.stack(total_metrics)
+        total_infeasibilities = np.average(total_infeasibilities)
+        average_infeasiblity_rate = total_infeasibilities / self.args.pred_len
+
+        # nasty way to pass all metrics together.
+        metrics = tuple(total_metrics.mean(axis=0))
         self.model.train()
-        return total_loss, total_losses.mean(axis=0)
+        return total_loss, total_losses.mean(axis=0), metrics, total_infeasibilities, average_infeasiblity_rate
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -156,9 +180,17 @@ class Exp_Main(Exp_Basic):
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss_all = criterion(outputs, batch_y)
+
+                    # Calculate other metrics for logging (detach and convert to numpy)
+                    train_mae, train_mse, train_mse, train_mape, train_mspe = metric(
+                        pred=outputs.detach().cpu().numpy(), 
+                        true=batch_y.detach().cpu().numpy()
+                    )
+
                     train_losses.append(loss_all.cpu().detach())
                     train_loss.append(loss_all.mean().item())
-                    #loss = (loss_all*multipliers).sum()
+
+                    #loss = (loss_all*multipliers).sum() #old loss
                     loss = ((multipliers + 1/self.args.pred_len) * loss_all).sum()
                     if self.args.dual_lr>0:
                         multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
@@ -178,27 +210,135 @@ class Exp_Main(Exp_Basic):
                     loss.backward()
                     model_optim.step()
 
+                if (i + 1) % self.args.eval_steps == 0:
+                    #TODO address duplicates between this and end of epoch.
+                    # Calculating how many violate feasibility
+                    # TODO WARNING this will only work in the constant case.
+                    train_num_infeasibles = (loss_all > self.args.constraint_level).sum()
+                    train_infeasible_rate = train_num_infeasibles / self.args.pred_len
+
+                    print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
+
+                    #Run validation set
+                    vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate = self.vali(vali_data, vali_loader, criterion)
+                    test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate= self.vali(test_data, test_loader, criterion)
+
+                    val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
+                    test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
+
+                    avg_train_loss = np.average(train_loss)
+                    #TODO ADD WANDB LOG !!!!
+                    wandb.log(
+                        {   
+                            # train
+                            "mse/train": avg_train_loss,
+                            "mse/val": vali_loss,
+                            "mse/test": test_loss,
+                            
+                            # val metrics
+                            "mae/val": val_mae,
+                            "rmse/val": val_rmse,
+                            "mape/val": val_mape,
+                            "mspe/val": val_mspe,
+
+                            # test metrics
+                            "mae/test": test_mae,
+                            "rmse/test": test_rmse,
+                            "mape/test": test_mape,
+                            "mspe/test": test_mspe,
+
+                            # infeasibles
+                            "infeasibles/train": train_num_infeasibles, 
+                            "infeasible_rate/train": train_infeasible_rate, 
+                            "infeasibles/val": val_infeasibilities,
+                            "infeasible_rate/val": val_avg_infeasiblity_rate,
+                            "infeasibles/test": test_infeasibilities,
+                            "infeasible_rate/test": test_avg_infeasiblity_rate,
+
+                            "epoch":epoch+1,
+                        },
+                        commit=False
+                    )
+
+                wandb.log(
+                        {   
+                            "loss": loss.detach().cpu().item(),
+                            "mae/train": train_mae,
+                            "mse/train": train_mse,
+                            "rmse/train": train_mse,
+                            "mape/train": train_mape,
+                            "mspe/train": train_mspe,
+                        }
+                )   
+            ##end train loop
+
+            
+
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
-            train_loss = np.average(train_loss)
+            avg_epoch_train_loss = np.average(train_loss)
             train_losses = np.stack(train_losses)
-            train_losses = np.average(train_losses, axis=0)
-            vali_loss, vali_losses = self.vali(vali_data, vali_loader, criterion)
-            test_loss, test_losses = self.vali(test_data, test_loader, criterion)
+            train_losses = np.average(train_losses, axis=0) #This is losses per step
+
+            train_num_infeasibles = (loss_all > self.args.constraint_level).sum()
+            train_infeasible_rate = train_num_infeasibles / self.args.pred_len
+
+            print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
+
+            # Run validation again for end of epoch logging
+            vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate = self.vali(vali_data, vali_loader, criterion)
+            test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate= self.vali(test_data, test_loader, criterion)
+
+            val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
+            test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+                epoch + 1, train_steps, avg_epoch_train_loss, vali_loss, test_loss))
             print(f"Train Loss[:10]: {train_losses[:10]}")
             print(f"Val Loss[:10]: {vali_losses[:10]}")
             print(f"Test Loss[:10]: {test_losses[:10]}")
             print(f"Train Loss[-10:]: {train_losses[-10:]}")
             print(f"Val Loss[-10:]: {vali_losses[-10:]}")
             print(f"Test Loss[-10:]: {test_losses[-10:]}")
+
+            
             for split, losses in zip(["train", "val", "test"],[train_losses, vali_losses, test_losses]):
                 for i, loss in enumerate(losses):
-                    wandb.log({f"mse/{split}/{i}": loss, "epoch":epoch+1})
+                    wandb.log({f"mse/{split}/{i}": loss, "epoch":epoch+1},commit=False)
 
             for i, multiplier in enumerate(multipliers):
-                wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1})
+                wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
+            
+            # All together
+            wandb.log(
+                {   
+                    # train
+                    "mse/train": avg_epoch_train_loss,
+                    "mse/val": vali_loss,
+                    "mse/test": test_loss,
+                    
+                    # val metrics
+                    "mae/val": val_mae,
+                    "rmse/val": val_rmse,
+                    "mape/val": val_mape,
+                    "mspe/val": val_mspe,
+
+                    # test metrics
+                    "mae/test": test_mae,
+                    "rmse/test": test_rmse,
+                    "mape/test": test_mape,
+                    "mspe/test": test_mspe,
+
+                    # infeasibles
+                    "infeasibles/train": train_num_infeasibles,
+                    "infeasible_rate/train": train_infeasible_rate,
+                    "infeasibles/val": val_infeasibilities,
+                    "infeasible_rate/val": val_avg_infeasiblity_rate,
+                    "infeasibles/test": test_infeasibilities,
+                    "infeasible_rate/test": test_avg_infeasiblity_rate,
+                    "epoch":epoch+1,
+                },
+                commit=True
+            )
 
             early_stopping(vali_loss, self.model, path)
             if early_stopping.early_stop:

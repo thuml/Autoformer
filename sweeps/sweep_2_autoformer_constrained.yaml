@@ -1,0 +1,54 @@
+program: run.py
+method: grid
+metric:
+  name: mse/test
+  goal: minimize
+parameters:
+  wandb_run:
+    value: "Constrained-5e"
+  wandb_project: 
+    value: "alelab/Autoformer"
+  des:
+    value: "Constrained Autoformer with constant epsilons in multiple windows. Reduced to 5e"
+  model:
+    value: "Autoformer"
+  train_epochs:
+    value: 5
+  constraint_level:
+    values: [0.5,0.45,0.55]
+  dual_init:
+    values: [1.0,0.1,0.0]
+  dual_lr:
+    values: [0.01,0.05]
+  pred_len:
+    values: [96,192,336,720]
+  is_training:
+    value: "1"
+  root_path:
+    value: "./dataset/weather/"
+  data_path:
+    value: "weather.csv"
+  model_id:
+    value: "weather_96_96"
+  data:
+    value: "custom"
+  features:
+    value: "M"
+  seq_len:
+    value: 96
+  label_len:
+    value: 48
+  e_layers:
+    value: 2
+  d_layers:
+    value: 1
+  factor:
+    value: 3
+  enc_in:
+    value: 21
+  dec_in:
+    value: 21
+  c_out:
+    value: 21
+  itr:
+    value: 1

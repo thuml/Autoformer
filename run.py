@@ -21,11 +21,15 @@ def main():
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='Autoformer',
                         help='model name, options: [Autoformer, Informer, Transformer]')
+    
+    # logging
+    # eval steps
+    parser.add_argument('--eval_steps', type=int, default=220, help='Test every eval_steps')
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='ETTm1', help='dataset type')
-    parser.add_argument('--root_path', type=str, default='./data/ETT/', help='root path of the data file')
-    parser.add_argument('--data_path', type=str, default='ETTh1.csv', help='data file')
+    parser.add_argument('--root_path', type=str, help='root path of the data file')
+    parser.add_argument('--data_path', type=str, help='data file')
     parser.add_argument('--features', type=str, default='M',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate')
     parser.add_argument('--target', type=str, default='OT', help='target feature in S or MS task')
@@ -64,7 +68,7 @@ def main():
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=2, help='experiments times')
-    parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
+    parser.add_argument('--train_epochs', type=int, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
@@ -80,13 +84,13 @@ def main():
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
     # wandb
-    parser.add_argument('--wandb_run', type=str, default='EVAL-shuffle', help='wandb run')    
+    parser.add_argument('--wandb_run', type=str, default='missing name', help='wandb run')    
     parser.add_argument('--wandb_project', type=str, default='Autoformer', help='wandb project')    
 
     # Constrained
-    parser.add_argument('--constraint_level', type=float, default=0.5, help='Constraint level (epsilon)')    
-    parser.add_argument('--dual_lr',  type=float, default=0.01, help='dual learning rate')
-    parser.add_argument('--dual_init',  type=float, default=1.0, help='dual var initialization')
+    parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon)')    
+    parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
+    parser.add_argument('--dual_init',  type=float, help='dual var initialization')
     args = parser.parse_args()
     
     args = parser.parse_args()
@@ -104,7 +108,8 @@ def main():
 
     print('Args in experiment:')
     print(args)
-    wandb.init(name=args.wandb_run, project=args.wandb_project, config=args)
+    run_name = f"{args.wandb_run}/{args.data_path}_{args.model}_len{args.pred_len}"
+    wandb.init(name=run_name, project=args.wandb_project, config=args)
 
     Exp = Exp_Main
 

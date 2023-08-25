@@ -32,6 +32,9 @@ def MSPE(pred, true):
 
 
 def metric(pred, true):
+    """
+    Calculates metrics for predictions given numpy arrays of predictions and true values.
+    """
     mae = MAE(pred, true)
     mse = MSE(pred, true)
     rmse = RMSE(pred, true)

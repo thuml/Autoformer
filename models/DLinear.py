@@ -47,7 +47,8 @@ class Model(nn.Module):
         # Decompsition Kernel Size
         kernel_size = 25
         self.decompsition = series_decomp(kernel_size)
-        self.individual = configs.individual
+        #self.individual = configs.individual
+        self.individual=True
         self.channels = configs.enc_in
 
         if self.individual:
@@ -69,9 +70,11 @@ class Model(nn.Module):
             # self.Linear_Seasonal.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
             # self.Linear_Trend.weight = nn.Parameter((1/self.seq_len)*torch.ones([self.pred_len,self.seq_len]))
 
-    def forward(self, x):
+
+    def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec,
+            enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
         # x: [Batch, Input length, Channel]
-        seasonal_init, trend_init = self.decompsition(x)
+        seasonal_init, trend_init = self.decompsition(x_enc)
         seasonal_init, trend_init = seasonal_init.permute(0,2,1), trend_init.permute(0,2,1)
         if self.individual:
             seasonal_output = torch.zeros([seasonal_init.size(0),seasonal_init.size(1),self.pred_len],dtype=seasonal_init.dtype).to(seasonal_init.device)
@@ -83,5 +86,5 @@ class Model(nn.Module):
             seasonal_output = self.Linear_Seasonal(seasonal_init)
             trend_output = self.Linear_Trend(trend_init)
 
-        x = seasonal_output + trend_output
-        return x.permute(0,2,1) # to [Batch, Output length, Channel]
+        out = seasonal_output + trend_output
+        return out.permute(0,2,1) # to [Batch, Output length, Channel]

@@ -1,0 +1,58 @@
+# 5. This sweep is a single parameter run for all models currently available on weather.
+# This is to get some quick results on how much the constraints are being respected. 
+# A companion sweep will run the ERM counterparts.
+# Choices: LR=0.01, dual init=1.0, constrain 0.5, based on previous sweeps on Reformer 10e.
+program: run.py
+method: grid
+metric:
+  name: mse/test
+  goal: minimize
+parameters:
+  wandb_run:
+    value: "Constrained-5e"
+  wandb_project: 
+    value: "alelab/Autoformer"
+  des:
+    value: "Constrained model runs without hptuning for fixed epsilon."
+  model:
+    values: ["Autoformer","DLinear"]
+  train_epochs:
+    value: 5
+  constraint_level:
+    value: 0.5
+  dual_init:
+    value: 1.0
+  dual_lr:
+    value: 0.01
+  pred_len:
+    values: [96,192,336,720]
+  is_training:
+    value: "1"
+  root_path:
+    value: "./dataset/weather/"
+  data_path:
+    value: "weather.csv"
+  model_id:
+    value: "weather_96_96"
+  data:
+    value: "custom"
+  features:
+    value: "M"
+  seq_len:
+    value: 96
+  label_len:
+    value: 48
+  e_layers:
+    value: 2
+  d_layers:
+    value: 1
+  factor:
+    value: 3
+  enc_in:
+    value: 21
+  dec_in:
+    value: 21
+  c_out:
+    value: 21
+  itr:
+    value: 1
