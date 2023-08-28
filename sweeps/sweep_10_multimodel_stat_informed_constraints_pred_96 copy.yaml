@@ -1,0 +1,55 @@
+# 7. statistics informed epsilon setting with multiple models
+program: run.py
+method: grid
+metric:
+  name: mse/test
+  goal: minimize
+parameters:
+  wandb_run:
+    value: "StatInformed-10e"
+  wandb_project: 
+    value: "alelab/Autoformer"
+  des:
+    value: "7. statistics informed epsilon setting with multiple models"
+  model:
+    values: ["Autoformer","Reformer"]
+  train_epochs:
+    value: 10
+  constraint_level:
+    values: [0.516,0.553,0.556]
+  dual_init:
+    value: 1.0
+  dual_lr:
+    value: 0.01
+  pred_len:
+    value: 96
+  is_training:
+    value: "1"
+  root_path:
+    value: "./dataset/weather/"
+  data_path:
+    value: "weather.csv"
+  model_id:
+    value: "weather_96_96"
+  data:
+    value: "custom"
+  features:
+    value: "M"
+  seq_len:
+    value: 96
+  label_len:
+    value: 48
+  e_layers:
+    value: 2
+  d_layers:
+    value: 1
+  factor:
+    value: 3
+  enc_in:
+    value: 21
+  dec_in:
+    value: 21
+  c_out:
+    value: 21
+  itr:
+    value: 1
