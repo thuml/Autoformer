@@ -340,10 +340,10 @@ class Exp_Main(Exp_Basic):
                 commit=True
             )
 
-            early_stopping(vali_loss, self.model, path)
-            if early_stopping.early_stop:
-                print("Early stopping")
-                break
+            early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
+            # if early_stopping.early_stop:
+            #     print("Early stopping")
+            #     break
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 

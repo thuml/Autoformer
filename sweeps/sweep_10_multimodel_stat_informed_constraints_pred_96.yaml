@@ -12,7 +12,7 @@ parameters:
   des:
     value: "7. statistics informed epsilon setting with multiple models"
   model:
-    values: ["Autoformer","Reformer"]
+    values: ["Autoformer"]
   train_epochs:
     value: 10
   constraint_level:

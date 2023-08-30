@@ -10,9 +10,10 @@ parameters:
   wandb_project: 
     value: "alelab/Autoformer"
   des:
-    value: "ERM models as a baseline for 10-epoch constrained stat-informed models"
+    value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer"]
+    #values: ["Autoformer","Reformer"] #original
+    value: "Reformer" # rerun of failed one.
   train_epochs:
     value: 10
   constraint_level:
@@ -22,7 +23,8 @@ parameters:
   dual_lr:
     value: 0
   pred_len:
-    values: [96,192,336,720]
+    #values: [96,192,336,720] # original
+    values: [192,336,720] # rerun of failed ones.
   is_training:
     value: "1"
   root_path:
