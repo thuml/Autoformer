@@ -137,6 +137,7 @@ class Exp_Main(Exp_Basic):
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
 
+        early_stopped_before=False # we want to log when is early stopping triggered.
         for epoch in range(self.args.train_epochs):
             iter_count = 0
             train_loss = []
@@ -307,8 +308,14 @@ class Exp_Main(Exp_Basic):
 
             for i, multiplier in enumerate(multipliers):
                 wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
+
+            early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
+            if early_stopping.early_stop and not early_stopped_before:
+                print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")
+                wandb.log({"early_stopped_epoch":epoch+1, "epoch":epoch+1},commit=False)
+                early_stopped_before=True
             
-            # All together
+            # Log all metrics together
             wandb.log(
                 {   
                     # train
@@ -339,11 +346,6 @@ class Exp_Main(Exp_Basic):
                 },
                 commit=True
             )
-
-            early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
-            # if early_stopping.early_stop:
-            #     print("Early stopping")
-            #     break
 
             adjust_learning_rate(model_optim, epoch + 1, self.args)
 

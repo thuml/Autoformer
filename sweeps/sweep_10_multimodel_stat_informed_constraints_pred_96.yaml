@@ -9,10 +9,12 @@ parameters:
     value: "StatInformed-10e"
   wandb_project: 
     value: "alelab/Autoformer"
+  experiment_tag: 
+    value: "e3_weather_10e_statinformed_seeds23"
   des:
     value: "7. statistics informed epsilon setting with multiple models"
   model:
-    values: ["Autoformer"]
+    values: ["Autoformer","Reformer"]
   train_epochs:
     value: 10
   constraint_level:
@@ -53,3 +55,5 @@ parameters:
     value: 21
   itr:
     value: 1
+  seed:
+    value: 0 # Forces the seed to be different for each run.

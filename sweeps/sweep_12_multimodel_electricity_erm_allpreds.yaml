@@ -9,6 +9,8 @@ parameters:
     value: "StatInformed-ERM-10e"
   wandb_project: 
     value: "alelab/Autoformer"
+  experiment_tag:
+    value: "e4_electricity_10e_statinformed_seeds23"
   des:
     value: "ERM 10e baseline"
   model:
@@ -53,3 +55,5 @@ parameters:
     value: 321
   itr:
     value: 1
+  seed:
+    value: 0 # Forces the seed to be different for each run.

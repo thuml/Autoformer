@@ -6,17 +6,14 @@ import random
 import numpy as np
 
 import wandb
+from datetime import datetime
 
 
 def main():
-    fix_seed = 2021
-    random.seed(fix_seed)
-    torch.manual_seed(fix_seed)
-    np.random.seed(fix_seed)
-
     parser = argparse.ArgumentParser(description='Autoformer & Transformer family for Time Series Forecasting')
 
     # basic config
+    parser.add_argument('--seed', type=int, required=True, default=0, help='randomization seed')
     parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='Autoformer',
@@ -84,16 +81,27 @@ def main():
     parser.add_argument('--devices', type=str, default='0,1,2,3', help='device ids of multile gpus')
 
     # wandb
-    parser.add_argument('--wandb_run', type=str, default='missing name', help='wandb run')    
-    parser.add_argument('--wandb_project', type=str, default='Autoformer', help='wandb project')    
+    parser.add_argument('--wandb_run', type=str, default='missing name', help='wandb run')
+    parser.add_argument('--wandb_project', type=str, default='Autoformer', help='wandb project')
+    parser.add_argument('--experiment_tag', type=str, default='e0_untagged_experiment', help='wandb project')
 
     # Constrained
     parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon)')    
     parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
     parser.add_argument('--dual_init',  type=float, help='dual var initialization')
     args = parser.parse_args()
-    
-    args = parser.parse_args()
+
+    if args.seed==0:
+       print("No seed provided (--seed 0), using current time as seed")
+       print("Randomly generating seed from time: ")
+       args.seed = int(datetime.now().timestamp())
+    else: 
+        print(f"Using user provided seed")
+    print(f"Seed is {args.seed}, this will be reflected in wandb config.")
+
+    random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
 
     print("Starting run with args")
     print(args)
@@ -109,7 +117,7 @@ def main():
     print('Args in experiment:')
     print(args)
     run_name = f"{args.wandb_run}/{args.data_path}_{args.model}_len{args.pred_len}"
-    wandb.init(name=run_name, project=args.wandb_project, config=args)
+    wandb.init(name=run_name, project=args.wandb_project, config=args,tags=[args.experiment_tag])
 
     Exp = Exp_Main
 
