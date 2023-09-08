@@ -192,9 +192,11 @@ class Exp_Main(Exp_Basic):
                     train_loss.append(loss_all.mean().item())
 
                     #loss = (loss_all*multipliers).sum() #old loss
-                    loss = ((multipliers + 1/self.args.pred_len) * loss_all).sum()
                     if self.args.dual_lr>0:
+                        loss = ((multipliers + 1/self.args.pred_len) * loss_all).sum()
                         multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
+                    else:
+                        loss = loss_all.mean()
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time() - time_now) / iter_count
