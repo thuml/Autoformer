@@ -1,4 +1,5 @@
-# 11. Baseline ERM to compare the 7-10 stat-informed sweeps.
+# 12. Baseline ERM to compare the 7-10 stat-informed sweeps (Exchange)
+# Not run yet as of sep 8
 program: run.py
 method: grid
 metric:
@@ -6,35 +7,33 @@ metric:
   goal: minimize
 parameters:
   wandb_run:
-    value: "StatInformed-ERM-10e"
+    value: "Exchange-StatInformed-ERM-10e"
   wandb_project: 
     value: "alelab/Autoformer"
-  experiment_tag: 
-    value: "e4_electricity_10e_statinformed_seeds23"
+  experiment_tag:
+    value: #TODO add tag
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer"] #original
-    #value: "Reformer" # rerun of failed one.
+    values: ["Autoformer","Reformer"]
   train_epochs:
     value: 10
-  constraint_level:
+  constraint_level: #signals that we're doing ERM
     value: -1
-  dual_init:
-    value: 0.0
-  dual_lr:
+  dual_init: #Irrelevant for ERM
+    value: 1.0
+  dual_lr: #signals that we're doing ERM
     value: 0
   pred_len:
-    values: [96,192,336,720] # original
-    #values: [192,336,720] # rerun of failed ones.
+    values: [96,192,336,720]
   is_training:
     value: "1"
   root_path:
-    value: "./dataset/weather/"
+    value: "./dataset/exchange_rate/"
   data_path:
-    value: "weather.csv"
+    value: "exchange_rate.csv"
   model_id:
-    value: "weather_96_96"
+    value: "exchange_rate"
   data:
     value: "custom"
   features:
@@ -50,11 +49,11 @@ parameters:
   factor:
     value: 3
   enc_in:
-    value: 21
+    value: 321
   dec_in:
-    value: 21
+    value: 321
   c_out:
-    value: 21
+    value: 321
   itr:
     value: 1
   seed:

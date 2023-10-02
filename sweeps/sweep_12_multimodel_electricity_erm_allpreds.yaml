@@ -10,7 +10,7 @@ parameters:
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag:
-    value: "e4_electricity_10e_statinformed_seeds23"
+    value: "e5_electricity_10e_statinformed_seeds23"
   des:
     value: "ERM 10e baseline"
   model:
@@ -20,7 +20,7 @@ parameters:
   constraint_level:
     value: -1
   dual_init:
-    value: 1.0
+    value: 0.0
   dual_lr:
     value: 0
   pred_len:
