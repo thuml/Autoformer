@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Exp main",
             "type": "python",
             "request": "launch",
             //"program": "${file}",
@@ -126,7 +126,11 @@
                 "--experiment_tag", "e0_exploration_runs",
                 "--seed","0",
                 "--des","Exploration",
-                "--model","Reformer",
+                //"--model","Reformer",
+                "--model","PatchTST",
+                //PatchTST specific param
+                "--fc_dropout","0.2",
+
                 "--is_training","1",
                 "--root_path","./dataset/exchange_rate/",
                 "--data_path","exchange_rate.csv",
