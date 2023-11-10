@@ -205,7 +205,7 @@ class Dataset_Custom(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 1}
+        type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
 
         self.features = features
@@ -234,8 +234,14 @@ class Dataset_Custom(Dataset):
         num_train = int(len(df_raw) * 0.7)
         num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_test
-        border1s = [0, num_train - self.seq_len, len(df_raw) - num_test - self.seq_len]
-        border2s = [num_train, num_train + num_vali, len(df_raw)]
+        # Border1s: first border for train, test val
+        border1s = [0, 
+                    num_train - self.seq_len, 
+                    len(df_raw) - num_test - self.seq_len]
+        # border2s: second border for train, test, val.
+        border2s = [num_train, 
+                    num_train + num_vali, 
+                    len(df_raw)]
         border1 = border1s[self.set_type]
         border2 = border2s[self.set_type]
 
@@ -263,7 +269,7 @@ class Dataset_Custom(Dataset):
         elif self.timeenc == 1:
             data_stamp = time_features(pd.to_datetime(df_stamp['date'].values), freq=self.freq)
             data_stamp = data_stamp.transpose(1, 0)
-
+        # Data x, data y always the same....
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
