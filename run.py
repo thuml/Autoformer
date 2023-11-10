@@ -72,6 +72,7 @@ def main():
     parser.add_argument('--des', type=str, default='test', help='exp description')
     parser.add_argument('--loss', type=str, default='mse', help='loss function')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
+    parser.add_argument('--pct_start', type=float, default=0.3, help='pct_start')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
 
     # GPU

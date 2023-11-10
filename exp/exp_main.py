@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
+from torch.optim import lr_scheduler 
 
 import os
 import time
@@ -75,15 +76,27 @@ class Exp_Main(Exp_Basic):
                 # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
+                        # Old (Autoformer)
+                        # if self.args.output_attention:
+                        #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                        # else:
+                        #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        # New (PatchTST)
+                        if 'Linear' in self.args.model or 'TST' in self.args.model:
+                            outputs = self.model(batch_x)
+                        else:
+                            if self.args.output_attention:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                            else:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                else:
+                    if 'Linear' in self.args.model or 'TST' in self.args.model:
+                        outputs = self.model(batch_x)
+                    else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                         else:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                else:
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
@@ -138,6 +151,14 @@ class Exp_Main(Exp_Basic):
         if self.args.use_amp:
             scaler = torch.cuda.amp.GradScaler()
 
+        # TODO: PatchTST uses this. Do we want it? 
+        scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
+                                            steps_per_epoch = train_steps,
+                                            pct_start = self.args.pct_start,
+                                            epochs = self.args.train_epochs,
+                                            max_lr = self.args.learning_rate)
+
+
         early_stopped_before=False # we want to log when is early stopping triggered.
         for epoch in range(self.args.train_epochs):
             iter_count = 0
@@ -162,10 +183,19 @@ class Exp_Main(Exp_Basic):
                 # encoder - decoder 
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
-                        if self.args.output_attention:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                        # Old
+                        # if self.args.output_attention:
+                        #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                        # else:
+                        #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                        #new (patchTST)
+                        if 'Linear' in self.args.model or 'TST' in self.args.model:
+                            outputs = self.model(batch_x)
                         else:
-                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                            if self.args.output_attention:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                            else:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
                         f_dim = -1 if self.args.features == 'MS' else 0
                         outputs = outputs[:, -self.args.pred_len:, f_dim:]
@@ -173,15 +203,26 @@ class Exp_Main(Exp_Basic):
                         loss = criterion(outputs, batch_y)
                         train_loss.append(loss.mean().item())
                 else:
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    # Old
+                    # if self.args.output_attention:
+                    #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    # else:
+                    #     outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                    # New (PatchTST)
+                    if 'Linear' in self.args.model or 'TST' in self.args.model:
+                            outputs = self.model(batch_x)
                     else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
+                        if self.args.output_attention:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                            
+                        else:
+                            outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_y)
+                    
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss_all = criterion(outputs, batch_y)
+                    
 
                     # Calculate other metrics for logging (detach and convert to numpy)
                     train_mae, train_mse, train_mse, train_mape, train_mspe = metric(
@@ -213,6 +254,11 @@ class Exp_Main(Exp_Basic):
                 else:
                     loss.backward()
                     model_optim.step()
+                
+                # New (PatchTST)
+                if self.args.lradj == 'TST':
+                    adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
+                    scheduler.step()
 
                 if (i + 1) % self.args.eval_steps == 0:
                     #TODO address duplicates between this and end of epoch.
@@ -317,6 +363,10 @@ class Exp_Main(Exp_Basic):
                 print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")
                 wandb.log({"early_stopped_epoch":epoch+1, "epoch":epoch+1},commit=False)
                 early_stopped_before=True
+            
+            if self.args.lradj == 'TST':
+                    adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
+                    scheduler.step()
             
             # Log all metrics together
             wandb.log(
