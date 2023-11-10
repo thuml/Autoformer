@@ -112,10 +112,12 @@ def main():
     else: 
         print(f"Using user provided seed")
     print(f"Seed is {args.seed}, this will be reflected in wandb config.")
+    
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+    
 
     print("Starting run with args")
     print(args)
@@ -132,6 +134,8 @@ def main():
     print(args)
     run_name = f"{args.wandb_run}/{args.data_path}_{args.model}_len{args.pred_len}"
     wandb.init(name=run_name, project=args.wandb_project, config=args,tags=[args.experiment_tag])
+    # Real seed is the actual seed passed to the RNGs (The user might have passed seed=0 to autogenerate seeds)
+    wandb.log({"real_seed":args.seed})
 
     Exp = Exp_Main
 
