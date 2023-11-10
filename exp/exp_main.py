@@ -433,18 +433,36 @@ class Exp_Main(Exp_Basic):
                 dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
                 # encoder - decoder
                 if self.args.use_amp:
+                    # old
+                #     with torch.cuda.amp.autocast():
+                #         if self.args.output_attention:
+                #             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                #         else:
+                #             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                # else:
+                #     if self.args.output_attention:
+                #         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+
+                #     else:
+                #         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                # new
                     with torch.cuda.amp.autocast():
+                        if 'Linear' in self.args.model or 'TST' in self.args.model:
+                            outputs = self.model(batch_x)
+                        else:
+                            if self.args.output_attention:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                            else:
+                                outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                else:
+                    if 'Linear' in self.args.model or 'TST' in self.args.model:
+                            outputs = self.model(batch_x)
+                    else:
                         if self.args.output_attention:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+
                         else:
                             outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                else:
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-
                 f_dim = -1 if self.args.features == 'MS' else 0
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
