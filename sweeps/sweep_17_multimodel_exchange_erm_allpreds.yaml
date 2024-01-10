@@ -1,5 +1,5 @@
+#TO DO I think this wasn't used!!! see 18-20.
 # 17. Baseline ERM PatchTST. Using parameters in https://github.com/yuqinie98/PatchTST/blob/main/PatchTST_supervised/scripts/PatchTST/weather.sh
-# Not run yet as of sep 8
 program: run.py
 method: grid
 metric:
@@ -29,11 +29,11 @@ parameters:
   is_training:
     value: "1"
   root_path:
-    value: "./dataset/exchange_rate/"
+    value: "./dataset/electricity/"
   data_path:
-    value: "exchange_rate.csv"
+    value: "electricity.csv"
   model_id:
-    value: "exchange_rate"
+    value: "electricity_erm_patchtst"
   data:
     value: "custom"
   features:

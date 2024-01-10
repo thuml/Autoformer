@@ -1,0 +1,81 @@
+# 18. Baseline ERM Patch TST. First of a series of new experiments, after some bugfixes. Check commit history and project notes.
+# Separate sweep for patch tst due to different parameters.
+program: run.py
+method: grid
+metric:
+  name: mse/test
+  goal: minimize
+parameters:
+  wandb_run:
+    value: "Electricity-StatInformed-ERM-10e-PatchTST"
+  wandb_project:
+    value: "alelab/Autoformer"
+  experiment_tag:
+    value: "e7_patchtst_erm_seeds123"
+  des:
+    value: "PatchTST ERM 10e baseline"
+  model:
+    values: ["PatchTST"]
+  train_epochs:
+    value: 10
+  constraint_level: #signals that we're doing ERM
+    value: -1
+  dual_init: #Irrelevant for ERM
+    value: 1.0
+  dual_lr: #signals that we're doing ERM
+    value: 0
+  pred_len:
+    values: [96,192,336]
+  is_training:
+    value: "1"
+  root_path:
+    value: "./dataset/electricity/"
+  data_path:
+    value: "electricity.csv"
+  model_id:
+    value: "electricity_constrained"
+  data:
+    value: "custom"
+  features:
+    value: "M"
+  seq_len:
+    value: 96
+  label_len:
+    value: 48
+  # Model parameters
+  enc_in:
+    value: 21
+  e_layers:
+    value: 3
+  n_heads:
+    value: 16
+  d_model:
+    value: 128
+  d_ff:
+    value: 256
+  dropout:
+    value: 0.2
+  fc_dropout:
+    value: 0.2
+  head_dropout:
+    value: 0
+  patch_len:
+    value: 16
+  stride:
+    value: 8
+  # e_layers:
+  #   value: 3
+  # d_layers:
+  #   value: 1
+  # factor:
+  #   value: 3
+  # enc_in:
+  #   value: 21
+  # dec_in:
+  #   value: 21
+  # c_out:
+  #   value: 21
+  itr:
+    value: 1
+  seed:
+    value: 0 # Forces the seed to be different for each run.

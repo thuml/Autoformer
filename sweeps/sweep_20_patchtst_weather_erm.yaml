@@ -1,5 +1,4 @@
-# 12. Baseline ERM to compare the 7-10 stat-informed sweeps (Exchange)
-# Not run yet as of sep 8
+# 20. Baseline ERM Patch TST.
 program: run.py
 method: grid
 metric:
@@ -7,15 +6,15 @@ metric:
   goal: minimize
 parameters:
   wandb_run:
-    value: "Exchange-StatInformed-ERM-10e"
+    value: "Weather-StatInformed-ERM-10e-PatchTST"
   wandb_project:
     value: "alelab/Autoformer"
   experiment_tag:
-    value: #TODO add tag
+    value: "e7_patchtst_erm_seeds123"
   des:
-    value: "ERM 10e baseline"
+    value: "PatchTST ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer"]
+    values: ["PatchTST"]
   train_epochs:
     value: 10
   constraint_level: #signals that we're doing ERM
@@ -25,15 +24,15 @@ parameters:
   dual_lr: #signals that we're doing ERM
     value: 0
   pred_len:
-    values: [96,192,336,720]
+    values: [96,192,336]
   is_training:
     value: "1"
   root_path:
-    value: "./dataset/exchange_rate/"
+    value: "./dataset/weather/"
   data_path:
-    value: "exchange_rate.csv"
+    value: "weather.csv"
   model_id:
-    value: "exchange_rate"
+    value: "weather_erm"
   data:
     value: "custom"
   features:
