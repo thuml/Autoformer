@@ -17,8 +17,8 @@ parameters:
     values: ["PatchTST"]
   train_epochs:
     value: 10
-  constraint_level:
-    values: [0.151, 0.159, 0.195]
+  constraint_level: # using train-based constraints
+    values: [0.193, 0.198, 0.237]
   dual_init:
     value: 1.0
   dual_lr:
@@ -43,7 +43,7 @@ parameters:
     value: 48
     # Model parameters
   enc_in:
-    value: 21
+    value: 321
   e_layers:
     value: 3
   n_heads:

@@ -44,7 +44,7 @@ parameters:
     value: 48
   # Model parameters
   enc_in:
-    value: 21
+    value: 321
   e_layers:
     value: 3
   n_heads:
