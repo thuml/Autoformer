@@ -1,6 +1,5 @@
 import os
 import torch
-import numpy as np
 
 
 class Exp_Basic(object):
