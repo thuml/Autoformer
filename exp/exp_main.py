@@ -349,7 +349,7 @@ class Exp_Main(Exp_Basic):
             print(f"Train Loss[-10:]: {train_losses[-10:]}")
             print(f"Val Loss[-10:]: {vali_losses[-10:]}")
             print(f"Test Loss[-10:]: {test_losses[-10:]}")
-
+    
             
             for split, losses in zip(["train", "val", "test"],[train_losses, vali_losses, test_losses]):
                 for i, loss in enumerate(losses):
@@ -400,7 +400,11 @@ class Exp_Main(Exp_Basic):
                 commit=True
             )
 
-            adjust_learning_rate(model_optim, epoch + 1, self.args)
+            # updated from patchTST
+            if self.args.lradj != 'TST':
+                adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args)
+            else:
+                print('Updating learning rate to {}'.format(scheduler.get_last_lr()[0]))
 
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))

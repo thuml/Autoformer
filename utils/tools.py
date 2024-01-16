@@ -1,3 +1,4 @@
+# updated from patchtst
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ import time
 plt.switch_backend('agg')
 
 
-def adjust_learning_rate(optimizer, epoch, args, printout=True):
+def adjust_learning_rate(optimizer, scheduler, epoch, args, printout=True):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))
     if args.lradj == 'type1':
         lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
@@ -28,7 +29,7 @@ def adjust_learning_rate(optimizer, epoch, args, printout=True):
     elif args.lradj == '6':
         lr_adjust = {epoch: args.learning_rate if epoch < 5 else args.learning_rate*0.1}  
     elif args.lradj == 'TST':
-        raise NotImplementedError
+        lr_adjust = {epoch: scheduler.get_last_lr()[0]}
     
     if epoch in lr_adjust.keys():
         lr = lr_adjust[epoch]
