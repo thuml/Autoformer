@@ -21,7 +21,7 @@ parameters:
   patience: 
     value: 10
   constraint_level: #using train-based constraints
-    values: [0.1132]
+    values: [0.14]
   dual_init:
     value: 1.0
   dual_lr:
