@@ -6,22 +6,22 @@ metric:
   goal: minimize
 parameters:
   wandb_run:
-    value: "Electricity-StatInformed-10e-Constrained"
+    value: "Electricity-PatchTST-Constrained-96-Single"
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag:
     #value: "e8_electricity_patchtst_statinformed_seeds123"
     value: "e10_electricity_patchtst_reproducing"
   des:
-    value: "Electricity-StatInformed-10e-Constrained"
+    value: "Electricity-PatchTST-Constrained-96-Single"
   model:
     values: ["PatchTST"]
   train_epochs:
-    value: 100
+    value: 90
   patience: 
     value: 10
   constraint_level: #using train-based constraints
-    values: [0.190, 0.201, 0.236]
+    values: [0.1132]
   dual_init:
     value: 1.0
   dual_lr:
@@ -72,4 +72,4 @@ parameters:
   learning_rate: 
     value: 0.0001
   seed:
-    value: 0 # Forces the seed to be different for each run.
+    value: 2021 #TODO put back to zero when running this for real experiments!!!
