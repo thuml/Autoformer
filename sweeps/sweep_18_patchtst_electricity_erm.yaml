@@ -11,12 +11,14 @@ parameters:
   wandb_project:
     value: "alelab/Autoformer"
   experiment_tag:
-    value: "e7_patchtst_erm_seeds123"
+    value: "e10_electricity_patchtst_reproducing"
   des:
     value: "PatchTST ERM 10e baseline"
   model:
     values: ["PatchTST"]
   train_epochs:
+    value: 100
+  patience:
     value: 10
   constraint_level: #signals that we're doing ERM
     value: -1
@@ -39,9 +41,9 @@ parameters:
   features:
     value: "M"
   seq_len:
-    value: 96
+    value: 336
   label_len:
-    value: 48
+    value: 48 #default value, same as patchtst
   # Model parameters
   enc_in:
     value: 321
@@ -63,19 +65,14 @@ parameters:
     value: 16
   stride:
     value: 8
-  # e_layers:
-  #   value: 3
-  # d_layers:
-  #   value: 1
-  # factor:
-  #   value: 3
-  # enc_in:
-  #   value: 21
-  # dec_in:
-  #   value: 21
-  # c_out:
-  #   value: 21
   itr:
     value: 1
+  batch_size:
+    value: 32
+  learning_rate: 
+    value: 0.0001
+  # new patchtst parameter
+  lradj: 
+    value: "TST"
   seed:
-    value: 0 # Forces the seed to be different for each run.
+    value: 2021 # Forces the seed to be different for each run.
