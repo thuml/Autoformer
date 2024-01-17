@@ -25,7 +25,7 @@ parameters:
   dual_init:
     value: 1.0
   dual_lr:
-    value: 0.01
+    value: 0.001
   pred_len:
     value: 96
   is_training:
