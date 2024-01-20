@@ -57,66 +57,6 @@ class Exp_Main(Exp_Basic):
         #criterion = nn.MSELoss()
         return lambda x, y: ((x-y)**2).mean(dim=(0, 2))#criterion
 
-    def vali(self, vali_data, vali_loader, criterion):
-        "Javier: this returns overall mean loss, average losses per step, and overall average metrics."
-        total_loss = []
-        total_losses = []
-        total_metrics=[]
-        total_infeasibilities = []
-        self.model.eval()
-        with torch.no_grad():
-            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
-                batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float()
-
-                batch_x_mark = batch_x_mark.float().to(self.device)
-                batch_y_mark = batch_y_mark.float().to(self.device)
-
-                # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
-                # encoder - decoder
-                if 'Linear' in self.args.model or 'TST' in self.args.model:
-                    outputs = self.model(batch_x)
-                else:
-                    if self.args.output_attention:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
-                    else:
-                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-
-                pred = outputs.detach().cpu()
-                true = batch_y.detach().cpu()
-
-                # Compute metrics (detach and convert to numpy)
-                mae, mse, rmse, mape, mspe = metric(pred=outputs.detach().cpu().numpy(), true=batch_y.detach().cpu().numpy())
-
-                loss = criterion(pred, true)
-                
-                #TODO verify this logic and reenable. 
-                vali_num_infeasibles = (loss > self.args.constraint_level).sum()
-                #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
-
-                #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
-
-                total_loss.append(loss.mean().item())
-                total_losses.append(loss.cpu().numpy())
-                total_metrics.append([mae, mse, rmse, mape, mspe])
-                total_infeasibilities.append(vali_num_infeasibles)
-
-        total_loss = np.average(total_loss)
-        total_losses = np.stack(total_losses)
-        total_metrics = np.stack(total_metrics)
-        total_infeasibilities = np.average(total_infeasibilities)
-        average_infeasiblity_rate = total_infeasibilities / self.args.pred_len
-
-        # nasty way to pass all metrics together.
-        metrics = tuple(total_metrics.mean(axis=0))
-        self.model.train()
-        return total_loss, total_losses.mean(axis=0), metrics, total_infeasibilities, average_infeasiblity_rate
-
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
@@ -362,6 +302,66 @@ class Exp_Main(Exp_Basic):
         self.model.load_state_dict(torch.load(best_model_path))
 
         return
+
+    def vali(self, vali_data, vali_loader, criterion):
+        "Javier: this returns overall mean loss, average losses per step, and overall average metrics."
+        total_loss = []
+        total_losses = []
+        total_metrics=[]
+        total_infeasibilities = []
+        self.model.eval()
+        with torch.no_grad():
+            for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
+                batch_x = batch_x.float().to(self.device)
+                batch_y = batch_y.float()
+
+                batch_x_mark = batch_x_mark.float().to(self.device)
+                batch_y_mark = batch_y_mark.float().to(self.device)
+
+                # decoder input
+                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                # encoder - decoder
+                if 'Linear' in self.args.model or 'TST' in self.args.model:
+                    outputs = self.model(batch_x)
+                else:
+                    if self.args.output_attention:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
+                    else:
+                        outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+                f_dim = -1 if self.args.features == 'MS' else 0
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+
+                pred = outputs.detach().cpu()
+                true = batch_y.detach().cpu()
+
+                # Compute metrics (detach and convert to numpy)
+                mae, mse, rmse, mape, mspe = metric(pred=outputs.detach().cpu().numpy(), true=batch_y.detach().cpu().numpy())
+
+                loss = criterion(pred, true)
+                
+                #TODO verify this logic and reenable. 
+                vali_num_infeasibles = (loss > self.args.constraint_level).sum()
+                #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
+
+                #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
+
+                total_loss.append(loss.mean().item())
+                total_losses.append(loss.cpu().numpy())
+                total_metrics.append([mae, mse, rmse, mape, mspe])
+                total_infeasibilities.append(vali_num_infeasibles)
+
+        total_loss = np.average(total_loss)
+        total_losses = np.stack(total_losses)
+        total_metrics = np.stack(total_metrics)
+        total_infeasibilities = np.average(total_infeasibilities)
+        average_infeasiblity_rate = total_infeasibilities / self.args.pred_len
+
+        # nasty way to pass all metrics together.
+        metrics = tuple(total_metrics.mean(axis=0))
+        self.model.train()
+        return total_loss, total_losses.mean(axis=0), metrics, total_infeasibilities, average_infeasiblity_rate
 
     def test(self, setting, test=0):
         test_data, test_loader = self._get_data(flag='test')
