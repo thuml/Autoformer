@@ -10,15 +10,16 @@ parameters:
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag:
-    value: "e4_electricity_10e_statinformed_seeds23"
+    value: "e14_constrained_electricity_dlfix"
   des:
-    value: "Electricity-StatInformed-10e-Constrained"
-  model:
-    values: ["Autoformer","Reformer"]
+    value: "Electricity-ConstrainedWTrain-10e-Informer"
   train_epochs:
     value: 10
+  # electricity.csv, pred_len=192, Informer
   constraint_level:
-    values: [0.173, 0.184, 0.200]
+    values: [0.188, 0.193, 0.198]
+  model:
+    value: Informer
   dual_init:
     value: 1.0
   dual_lr:

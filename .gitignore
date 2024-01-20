@@ -134,3 +134,4 @@ dataset/
 results/
 test_results/
 wandb/
+figures/

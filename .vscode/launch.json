@@ -5,6 +5,114 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Run Electricity",
+            "type": "python",
+            "request": "launch",
+            "program": "run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--wandb_project", "Autoformer-javierdev",
+                "--wandb_run", "Informer-ERM-Electricity-96",
+                "--experiment_tag", "e0_exploration_runs",
+                "--seed","0",
+                "--des","Exploration",
+                //Accelerator Actually for MPS just leave blank
+                // "--use-gpu",
+                // "",
+                "--model","Informer",
+                //"--model","Informer",
+                
+                "--is_training","1",
+                //Data paths
+                "--root_path","./dataset/electricity/",
+                "--data_path","electricity.csv",
+                "--model_id","electricity",
+                "--data","custom",
+                "--features","M",
+                //Experiment Params
+                "--seq_len","96",
+                "--label_len","48",
+                "--pred_len","96",
+                "--e_layers","2",
+                "--d_layers","1",
+                "--factor","3",
+                //Dataset specific
+                //Electricity
+                "--enc_in","321",
+                "--dec_in","321",
+                "--c_out","321",
+                //Exchange
+                // "--enc_in","8",
+                // "--dec_in","8",
+                // "--c_out","8",
+                //Parameters that matter
+                "--train_epochs","10",
+                "--itr","1",
+                // "--dual_lr", "0.01", //Constrained
+                "--dual_init", "1.0",
+                "--constraint_level","0.169",//Keeping the same as old a
+                
+                "--dual_lr","0", //ERM
+                //"--constraint_level", "2.0", //Set to what I think is the mean for now.
+                "--constraint_level", "-1", //ERM
+                //PatchTST specific param
+                // "--fc_dropout","0.2",
+            ]
+        }
+        ,{   
+            //To figure out what enc_in is for?
+            "name": "Reformer debugging",
+            "type": "python",
+            "request": "launch",
+            "program": "run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":[
+                "--wandb_project", "Autoformer-javierdev",
+                "--wandb_run", "Reformer-deleteme",
+                "--experiment_tag", "e0_exploration_runs",
+                "--seed","0",
+                "--des","Exploration",
+                "--model","Reformer",
+                //PatchTST specific param
+                "--fc_dropout","0.2",
+                "--is_training","1",
+                "--root_path","./dataset/electricity/",
+                "--data_path","electricity.csv",
+                "--model_id","electricity_reformer",
+                "--data","custom",
+                "--features","M",
+                "--seq_len","96",
+                "--label_len","48",
+                "--e_layers","2",
+                "--d_layers","1",
+                "--factor","3",
+                //Dataset specific
+                //Electricity reformer
+                "--enc_in","1",
+                "--dec_in","1",
+                "--c_out","1",
+                //Electricity
+                //"--enc_in","321",
+                //"--dec_in","321",
+                //"--c_out","321",
+                //Exchange
+                // "--enc_in","8",
+                // "--dec_in","8",
+                // "--c_out","8",
+                //Parameters that matter
+                "--pred_len","96",
+                "--train_epochs","10",
+                "--itr","1",
+                "--dual_lr", "0.01", //Constrained
+                //"--dual_lr","0", //ERM
+                //"--constraint_level", "2.0", //Set to what I think is the mean for now.
+                "--constraint_level", "-1", //ERM
+                "--dual_init", "0.0",
+            ]
+        }
+        {
             "name": "Exp main",
             "type": "python",
             "request": "launch",
@@ -130,6 +238,7 @@
                 "--model","PatchTST",
                 //PatchTST specific param
                 "--fc_dropout","0.2",
+                
 
                 "--is_training","1",
                 "--root_path","./dataset/exchange_rate/",
@@ -143,22 +252,26 @@
                 "--d_layers","1",
                 "--factor","3",
                 //Dataset specific
+                //Electricity reformer
+                "--enc_in","1",
+                "--dec_in","1",
+                "--c_out","1",
                 //Electricity
                 //"--enc_in","321",
                 //"--dec_in","321",
                 //"--c_out","321",
                 //Exchange
-                "--enc_in","8",
-                "--dec_in","8",
-                "--c_out","8",
+                // "--enc_in","8",
+                // "--dec_in","8",
+                // "--c_out","8",
                 //Parameters that matter
-                "--pred_len","192",
+                "--pred_len","96",
                 "--train_epochs","10",
                 "--itr","1",
                 "--dual_lr", "0.01", //Constrained
                 //"--dual_lr","0", //ERM
-                "--constraint_level", "2.0", //Set to what I think is the mean for now.
-                //"--constraint_level", "-1", //ERM
+                //"--constraint_level", "2.0", //Set to what I think is the mean for now.
+                "--constraint_level", "-1", //ERM
                 "--dual_init", "0.0",
             ]
         }

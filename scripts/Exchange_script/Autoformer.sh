@@ -1,6 +1,5 @@
 export CUDA_VISIBLE_DEVICES=4
 
-
 python -u run.py \
   --is-training 1 \
   --root-path ./dataset/exchange_rate/ \

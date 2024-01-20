@@ -13,12 +13,13 @@ parameters:
     value: "e4_electricity_10e_statinformed_seeds23"
   des:
     value: "Electricity-StatInformed-10e-Constrained"
-  model:
-    values: ["Autoformer","Reformer"]
   train_epochs:
     value: 10
+  # electricity.csv, pred_len=720, Informer
   constraint_level:
-    values: [0.215, 0.230, 0.246]
+    values: [0.341, 0.373, 0.426]
+  model:
+    value: Informer
   dual_init:
     value: 1.0
   dual_lr:

@@ -6,15 +6,15 @@ metric:
   goal: minimize
 parameters:
   wandb_run:
-    value: "StatInformed-ERM-10e"
+    value: "Weather-StatInformed-ERM-10e"
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag: 
-    value: "e4_electricity_10e_statinformed_seeds23"
+    value: "e11_erm_weather_dlfix"
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer"] #original
+    values: ["Autoformer","Reformer","Informer"] #original
     #value: "Reformer" # rerun of failed one.
   train_epochs:
     value: 10
@@ -26,7 +26,6 @@ parameters:
     value: 0
   pred_len:
     values: [96,192,336,720] # original
-    #values: [192,336,720] # rerun of failed ones.
   is_training:
     value: "1"
   root_path:

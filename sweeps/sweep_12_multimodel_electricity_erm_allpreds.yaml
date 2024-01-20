@@ -6,15 +6,15 @@ metric:
   goal: minimize
 parameters:
   wandb_run:
-    value: "StatInformed-ERM-10e"
+    value: "Electricity-StatInformed-ERM-10e"
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag:
-    value: "e5_electricity_10e_statinformed_seeds23"
+    value: "e12_erm_electricity_dlfix"
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer"]
+    values: ["Autoformer","Reformer","Informer"]
   train_epochs:
     value: 10
   constraint_level:

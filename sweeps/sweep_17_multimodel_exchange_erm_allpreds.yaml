@@ -1,4 +1,4 @@
-#TO DO I think this wasn't used!!! see 18-20.
+#TO DO I think this wasn't used!!! see 18-20. Also It has errors.
 # 17. Baseline ERM PatchTST. Using parameters in https://github.com/yuqinie98/PatchTST/blob/main/PatchTST_supervised/scripts/PatchTST/weather.sh
 program: run.py
 method: grid
@@ -11,11 +11,11 @@ parameters:
   wandb_project: 
     value: "alelab/Autoformer"
   experiment_tag:
-    value: #TODO add tag
+    value: "e13_erm_exchange_dlfix"
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["PatchTST"]
+    values: ["Autoformer","Reformer","Informer"]
   train_epochs:
     value: 10
   constraint_level: #signals that we're doing ERM
@@ -29,11 +29,11 @@ parameters:
   is_training:
     value: "1"
   root_path:
-    value: "./dataset/electricity/"
+    value: "./dataset/exchange_rate/"
   data_path:
-    value: "electricity.csv"
+    value: "exchange_rate.csv"
   model_id:
-    value: "electricity_erm_patchtst"
+    value: "exchange_rate"
   data:
     value: "custom"
   features:
@@ -49,10 +49,11 @@ parameters:
   factor:
     value: 3
   enc_in:
+    value: 8
   dec_in:
-    value: 21
+    value: 8
   c_out:
-    value: 21
+    value: 8
   itr:
     value: 1
   seed:
