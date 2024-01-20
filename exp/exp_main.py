@@ -61,7 +61,20 @@ class Exp_Main(Exp_Basic):
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
+
+        # Initializing multipliers for constraint optimization
         multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
+        
+        # Setting vector of constraints if running linear or constant constrained.
+        if self.args.constraint_type == "StaticLinear" or self.args.constraint_type == "DynamicLinear":
+            print("Running linear constraint. Logging constraint levels.")
+            constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(self.device)
+        if self.args.constraint_type == "Constant":
+            #TODO run and test that dimensions match the above.
+            constraint_levels = (torch.ones(self.args.pred_len, device=self.device)*self.args.constraint_level).to(self.device)
+        for i, eps in enumerate(constraint_levels):
+                wandb.log({f"constraint/{i}": eps})
+
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
             os.makedirs(path)
@@ -117,7 +130,7 @@ class Exp_Main(Exp_Basic):
                     f_dim = -1 if self.args.features == 'MS' else 0
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    loss_all = criterion(outputs, batch_y)
+                    raw_loss = criterion(outputs, batch_y)
                     
 
                     # Calculate other metrics for logging (detach and convert to numpy)
@@ -126,17 +139,23 @@ class Exp_Main(Exp_Basic):
                         true=batch_y.detach().cpu().numpy()
                     )
 
-                    train_losses.append(loss_all.cpu().detach())
-                    train_loss.append(loss_all.mean().item())
+                    train_losses.append(raw_loss.cpu().detach())
+                    train_loss.append(raw_loss.mean().item())
 
-                    #loss = (loss_all*multipliers).sum() #old loss
-                    if self.args.constrained_learning: 
-                        constrained_loss, multipliers = self._compute_constrained_loss(loss_all, multipliers, self.args)
-                    if self.args.dual_lr>0:
-                        constrained_loss = ((multipliers + 1/self.args.pred_len) * loss_all).sum()
-                        multipliers = (multipliers+self.args.dual_lr*(loss_all.detach()-self.args.constraint_level)).clamp(min=0.)
+    
+
+                    if self.args.constraint_type == "ERM":
+                        constrained_loss = raw_loss.mean()
+                    elif self.args.constraint_type == "Constant" or self.args.constraint_type == "StaticLinear":
+                        constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
+                        multipliers += (self.args.dual_lr * (raw_loss.detach() - constraint_levels)).clamp(min=0.)
+                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                    elif self.args.constraint_type == "DynamicLinear":
+                        raise NotImplementedError("DynamicLinear constraint not implemented yet.")
+                    elif self.args.constraint_type == "Resilience":
+                        raise NotImplementedError("Resilience constraint not implemented yet.")
                     else:
-                        constrained_loss = loss_all.mean()
+                        raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -157,7 +176,7 @@ class Exp_Main(Exp_Basic):
                     #TODO address duplicates between this and end of epoch.
                     # Calculating how many violate feasibility
                     # TODO WARNING this will only work in the constant case.
-                    train_num_infeasibles = (loss_all > self.args.constraint_level).sum()
+                    train_num_infeasibles = (raw_loss > self.args.constraint_level).sum()
                     train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
                     print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -220,7 +239,7 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            train_num_infeasibles = (loss_all > self.args.constraint_level).sum()
+            train_num_infeasibles = (raw_loss > self.args.constraint_level).sum()
             train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -241,14 +260,17 @@ class Exp_Main(Exp_Basic):
             print(f"Val Loss[-10:]: {vali_losses[-10:]}")
             print(f"Test Loss[-10:]: {test_losses[-10:]}")
     
-            
+            # Logging train, val, test losses
             for split, losses in zip(["train", "val", "test"],[train_losses, vali_losses, test_losses]):
-                for i, constrained_loss in enumerate(losses):
-                    wandb.log({f"mse/{split}/{i}": constrained_loss, "epoch":epoch+1},commit=False)
+                for i, loss in enumerate(losses):
+                    wandb.log({f"mse/{split}/{i}": loss, "epoch":epoch+1},commit=False)
+            
+            # Logging constraint optimization info info
+            if multipliers is not None:
+                for i, multiplier in enumerate(multipliers):
+                    wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
 
-            for i, multiplier in enumerate(multipliers):
-                wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
-
+            # Early stopping, checkpointing, LR adj
             early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
             if early_stopping.early_stop and not early_stopped_before:
                 print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")

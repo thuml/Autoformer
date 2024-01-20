@@ -87,7 +87,10 @@ def main():
     parser.add_argument('--experiment_tag', type=str, default='e0_untagged_experiment', help='wandb project')
 
     # Constrained
-    parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon)')    
+    parser.add_argument('--constraint_type', type=str, help='Constraint type (ERM,Constant,StaticLinear,DynamicLinear,Resilience)')
+    parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon) if using Constant constraint_type')    
+    parser.add_argument('--constraint_slope', type=float, help='Constraint slope if using StaticLinear or DynamicLinear')
+    parser.add_argument('--constraint_offset', type=float, help='Constraint offset if using StaticLinear or DynamicLinear')
     parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
     parser.add_argument('--dual_init',  type=float, help='dual var initialization')
 
@@ -105,6 +108,17 @@ def main():
     parser.add_argument('--individual', type=int, default=0, help='individual head; True 1 False 0')
 
     args = parser.parse_args()
+
+    # Argument validation
+    # if Constant, then constraint_level must be provided
+    if args.constraint_type == 'Constant' and args.constraint_level is None:
+        raise ValueError("Constraint type is Constant, but constraint_level is None")
+    # if StaticLinear or DynamicLinear, then constraint_slope and constraint_offset must be provided
+    if args.constraint_type in ['StaticLinear','DynamicLinear'] and (args.constraint_slope is None or args.constraint_offset is None):
+        raise ValueError("Constraint type is StaticLinear or DynamicLinear, but constraint_slope or constraint_offset is None")
+    # if not ERM, then dual_lr and dual_init must be provided
+    if args.constraint_type != 'ERM' and (args.dual_lr is None or args.dual_init is None):
+        raise ValueError("Constraint type is not ERM, but dual_lr or dual_init is None")
 
     if args.seed==0:
        print("No seed provided (--seed 0), using current time as seed")
