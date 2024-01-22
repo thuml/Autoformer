@@ -6,6 +6,8 @@ from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
 import numpy as np
+import scipy
+from scipy.stats import pearsonr
 import torch
 import torch.nn as nn
 from torch import optim
@@ -17,6 +19,7 @@ import time
 import warnings
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas
 
 import wandb
 
@@ -29,8 +32,8 @@ class Exp_Main(Exp_Basic):
         if self.args.use_amp:
             raise Exception("This repo does not support AMP. ")
 
-    def _build_model(self):
-        model_dict = {
+    #to be able to load back the modelb
+    MODEL_DICT={
             'Autoformer': Autoformer,
             'Transformer': Transformer,
             'Informer': Informer,
@@ -38,7 +41,10 @@ class Exp_Main(Exp_Basic):
             'Linear': Linear,
             'DLinear': DLinear,
             'PatchTST': PatchTST,
-        }
+    }
+
+    def _build_model(self):
+        model_dict = self.MODEL_DICT
         model = model_dict[self.args.model].Model(self.args).float()
 
         if self.args.use_multi_gpu and self.args.use_gpu:
@@ -143,7 +149,6 @@ class Exp_Main(Exp_Basic):
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     raw_loss = criterion(outputs, batch_y)
-                    
 
                     # Calculate other metrics for logging (detach and convert to numpy)
                     train_mae, train_mse, train_mse, train_mape, train_mspe = metric(
@@ -199,7 +204,7 @@ class Exp_Main(Exp_Basic):
                     test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
 
                     avg_train_loss = np.average(train_loss)
-                    #TODO ADD WANDB LOG !!!!
+                    
                     wandb.log(
                         {   
                             # train
@@ -332,6 +337,12 @@ class Exp_Main(Exp_Basic):
 
         best_model_path = path + '/' + 'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
+
+        # Save to "./checkpoints/best_model.pth"
+        best_model_path_final=os.path.join(wandb.run.dir, 'best_model.pth')
+        print("Logging the best model to ", best_model_path_final)
+        torch.save(self.model.state_dict(),best_model_path_final)
+        wandb.save(best_model_path_final,policy='now')
 
         return
 
@@ -474,6 +485,21 @@ class Exp_Main(Exp_Basic):
         np.save(folder_path + 'pred.npy', preds)
         np.save(folder_path + 'true.npy', trues)
 
+        # In case the artifact doesn't work
+        wandb.log({"test_predictions": preds})
+        wandb.log({"test_true": trues})
+
+        # Log a table with preds and trues
+        # test_df = pandas.DataFrame(data=np.concatenate([preds, trues], axis=1), columns=[f"pred_{i}" for i in range(preds.shape[1])] + [f"true_{i}" for i in range(trues.shape[1])])
+        # test_df.to_csv("deleteme.csv")
+        # wandb.save("pred.npy")
+        # wandb.log({"test_table": wandb.Table(dataframe=test_df)})
+
+        #in case the log doesn't work
+        artifact = wandb.Artifact("predictions", type="dataset")
+        artifact.add_dir(f"{folder_path}/")
+        wandb.log_artifact(artifact)
+        
         return
 
     def predict(self, setting, load=False):

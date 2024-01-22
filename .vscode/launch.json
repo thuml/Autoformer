@@ -117,7 +117,7 @@
                 // "--c_out","8",
                 //Parameters that matter
                 "--pred_len","96",
-                "--train_epochs","10",
+                "--train_epochs","1",
                 "--itr","1",
                 "--dual_lr", "0.01", //Constrained
                 //"--dual_lr","0", //ERM

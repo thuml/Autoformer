@@ -158,10 +158,11 @@ def main():
     if args.is_training:
         for ii in range(args.itr):
             # setting record of experiments
-            setting = '{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}'.format(
+            setting = '{}_{}_{}_constr_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_fc{}_eb{}_dt{}_{}_{}_wb_{}'.format(
                 args.model_id,
                 args.model,
                 args.data,
+                args.constraint_type,
                 args.features,
                 args.seq_len,
                 args.label_len,
@@ -174,7 +175,13 @@ def main():
                 args.factor,
                 args.embed,
                 args.distil,
-                args.des, ii)
+                args.des, 
+                ii,
+                # uuid fron wandb run
+                wandb.run.id,
+                )
+            # log the file ID used for writing the test preds.
+            wandb.log({"file_id":setting})
 
             exp = Exp(args)  # set experiments
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
