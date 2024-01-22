@@ -87,12 +87,13 @@ def main():
     parser.add_argument('--experiment_tag', type=str, default='e0_untagged_experiment', help='wandb project')
 
     # Constrained
-    parser.add_argument('--constraint_type', type=str, help='Constraint type (ERM,Constant,StaticLinear,DynamicLinear,Resilience)')
-    parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon) if using Constant constraint_type')    
-    parser.add_argument('--constraint_slope', type=float, help='Constraint slope if using StaticLinear or DynamicLinear')
-    parser.add_argument('--constraint_offset', type=float, help='Constraint offset if using StaticLinear or DynamicLinear')
+    parser.add_argument('--constraint_type', type=str, help='Constraint type (erm,constant,static_linear,dynamic_linear,resilience)')
+    parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon) if using constant constraint_type')    
+    parser.add_argument('--constraint_slope', type=float, help='Constraint slope if using static_linear or dynamic_linear')
+    parser.add_argument('--constraint_offset', type=float, help='Constraint offset if using static_linear or dynamic_linear')
     parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
     parser.add_argument('--dual_init',  type=float, help='dual var initialization')
+    parser.add_argument('--dual_clip',  type=float, default=10.0, help='clip dual variables')
 
     # PatchTST
     parser.add_argument('--fc_dropout', type=float, default=0.05, help='fully connected dropout')

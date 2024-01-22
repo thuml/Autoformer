@@ -13,7 +13,7 @@
             "justMyCode": true,
             "args": [
                 "--wandb_project", "Autoformer-javierdev",
-                "--wandb_run", "Informer-ERM-Electricity-96",
+                "--wandb_run", "dev-Refactoring",
                 "--experiment_tag", "e0_exploration_runs",
                 "--seed","0",
                 "--des","Exploration",
@@ -47,15 +47,29 @@
                 // "--dec_in","8",
                 // "--c_out","8",
                 //Parameters that matter
-                "--train_epochs","10",
+                "--train_epochs","2",
                 "--itr","1",
-                // "--dual_lr", "0.01", //Constrained
+                //Constraint parameters
+                // "--constraint_type","erm",
+                // "--dual_init", "1.0",
+                // "--dual_lr","0", 
+                // "--constraint_level", "-1",
+
+                //Constraint parameters constant
+                // "--constraint_type","constant",
+                // "--dual_init", "1.0",
+                // "--dual_lr","0.01", //ERM
+                // "--constraint_level","0.169",
+
+                //Constraint parameters static_linear
+                "--constraint_type","static_linear",
                 "--dual_init", "1.0",
-                "--constraint_level","0.169",//Keeping the same as old a
+                "--dual_lr","0.01", //ERM
+                "--constraint_slope","0.005",
+                "--constraint_offset","0.169",
+
                 
-                "--dual_lr","0", //ERM
-                //"--constraint_level", "2.0", //Set to what I think is the mean for now.
-                "--constraint_level", "-1", //ERM
+
                 //PatchTST specific param
                 // "--fc_dropout","0.2",
             ]

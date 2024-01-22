@@ -52,6 +52,22 @@ class Exp_Main(Exp_Basic):
     def _select_optimizer(self):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
         return model_optim
+    
+    def _create_constraint_levels_tensor(self):
+        """Creates a constraint_levels tensor of shape (pred_len,) for use in constraint optimization."""
+        # Setting vector of constraints if running linear or constant constrained.
+        device = self.device
+        if self.args.constraint_type == "static_linear" or self.args.constraint_type == "dynamic_linear":
+            print("Running linear constraint. Logging constraint levels.")
+            constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(device)
+        elif self.args.constraint_type == "constant":
+            #TODO run and test that dimensions match the above.
+            constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
+        else: 
+            constraint_levels = torch.zeros(self.args.pred_len, device=device)
+        for i, eps in enumerate(constraint_levels):
+                wandb.log({f"constraint/{i}": eps})
+        return constraint_levels
 
     def _select_criterion(self):
         #criterion = nn.MSELoss()
@@ -66,12 +82,8 @@ class Exp_Main(Exp_Basic):
         multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
         
         # Setting vector of constraints if running linear or constant constrained.
-        if self.args.constraint_type == "StaticLinear" or self.args.constraint_type == "DynamicLinear":
-            print("Running linear constraint. Logging constraint levels.")
-            constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(self.device)
-        if self.args.constraint_type == "Constant":
-            #TODO run and test that dimensions match the above.
-            constraint_levels = (torch.ones(self.args.pred_len, device=self.device)*self.args.constraint_level).to(self.device)
+        constraint_levels = self._create_constraint_levels_tensor()
+        
         for i, eps in enumerate(constraint_levels):
                 wandb.log({f"constraint/{i}": eps})
 
@@ -142,18 +154,16 @@ class Exp_Main(Exp_Basic):
                     train_losses.append(raw_loss.cpu().detach())
                     train_loss.append(raw_loss.mean().item())
 
-    
-
-                    if self.args.constraint_type == "ERM":
+                    if self.args.constraint_type == "erm":
                         constrained_loss = raw_loss.mean()
-                    elif self.args.constraint_type == "Constant" or self.args.constraint_type == "StaticLinear":
+                    elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
                         constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
                         multipliers += (self.args.dual_lr * (raw_loss.detach() - constraint_levels)).clamp(min=0.)
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                    elif self.args.constraint_type == "DynamicLinear":
-                        raise NotImplementedError("DynamicLinear constraint not implemented yet.")
-                    elif self.args.constraint_type == "Resilience":
-                        raise NotImplementedError("Resilience constraint not implemented yet.")
+                    elif self.args.constraint_type == "dynamic_linear":
+                        raise NotImplementedError("dynamic_linear constraint not implemented yet.")
+                    elif self.args.constraint_type == "resilience":
+                        raise NotImplementedError("resilience constraint not implemented yet.")
                     else:
                         raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
                 if (i + 1) % 100 == 0:
@@ -176,7 +186,7 @@ class Exp_Main(Exp_Basic):
                     #TODO address duplicates between this and end of epoch.
                     # Calculating how many violate feasibility
                     # TODO WARNING this will only work in the constant case.
-                    train_num_infeasibles = (raw_loss > self.args.constraint_level).sum()
+                    train_num_infeasibles = (raw_loss > constraint_levels).sum()
                     train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
                     print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -239,7 +249,7 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            train_num_infeasibles = (raw_loss > self.args.constraint_level).sum()
+            train_num_infeasibles = (raw_loss > constraint_levels).sum()
             train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -331,6 +341,9 @@ class Exp_Main(Exp_Basic):
         total_losses = []
         total_metrics=[]
         total_infeasibilities = []
+
+        constraint_levels = self._create_constraint_levels_tensor()
+
         self.model.eval()
         with torch.no_grad():
             for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
@@ -355,24 +368,23 @@ class Exp_Main(Exp_Basic):
                 outputs = outputs[:, -self.args.pred_len:, f_dim:]
                 batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
-                pred = outputs.detach().cpu()
-                true = batch_y.detach().cpu()
+                pred = outputs.detach()
+                true = batch_y.detach()
 
                 # Compute metrics (detach and convert to numpy)
                 mae, mse, rmse, mape, mspe = metric(pred=outputs.detach().cpu().numpy(), true=batch_y.detach().cpu().numpy())
 
                 loss = criterion(pred, true)
                 
-                #TODO verify this logic and reenable. 
-                vali_num_infeasibles = (loss > self.args.constraint_level).sum()
+                vali_num_infeasibles = (loss > constraint_levels).sum()
                 #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
 
-                #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
+                    #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
 
                 total_loss.append(loss.mean().item())
                 total_losses.append(loss.cpu().numpy())
                 total_metrics.append([mae, mse, rmse, mape, mspe])
-                total_infeasibilities.append(vali_num_infeasibles)
+                total_infeasibilities.append(vali_num_infeasibles.cpu().numpy())
 
         total_loss = np.average(total_loss)
         total_losses = np.stack(total_losses)
