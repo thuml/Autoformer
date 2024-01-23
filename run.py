@@ -112,14 +112,14 @@ def main():
 
     # Argument validation
     # if Constant, then constraint_level must be provided
-    if args.constraint_type == 'Constant' and args.constraint_level is None:
-        raise ValueError("Constraint type is Constant, but constraint_level is None")
+    if args.constraint_type == 'constant' and args.constraint_level is None:
+        raise ValueError("Constraint type is constant, but constraint_level is None")
     # if StaticLinear or DynamicLinear, then constraint_slope and constraint_offset must be provided
-    if args.constraint_type in ['StaticLinear','DynamicLinear'] and (args.constraint_slope is None or args.constraint_offset is None):
-        raise ValueError("Constraint type is StaticLinear or DynamicLinear, but constraint_slope or constraint_offset is None")
+    if args.constraint_type in ['static_linear','dynamic_linear'] and (args.constraint_slope is None or args.constraint_offset is None):
+        raise ValueError("Constraint type is static_linear or dynamic_linear, but constraint_slope or constraint_offset is None")
     # if not ERM, then dual_lr and dual_init must be provided
-    if args.constraint_type != 'ERM' and (args.dual_lr is None or args.dual_init is None):
-        raise ValueError("Constraint type is not ERM, but dual_lr or dual_init is None")
+    if args.constraint_type != 'erm' and (args.dual_lr is None or args.dual_init is None):
+        raise ValueError("Constraint type is not erm, but dual_lr or dual_init is None")
 
     if args.seed==0:
        print("No seed provided (--seed 0), using current time as seed")

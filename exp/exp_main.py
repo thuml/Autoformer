@@ -581,8 +581,8 @@ class Exp_Main(Exp_Basic):
         np.save(folder_path + 'true.npy', trues)
 
         # In case the artifact doesn't work
-        wandb.log({"test_predictions": preds})
-        wandb.log({"test_true": trues})
+        # wandb.log({"test_predictions": preds})
+        # wandb.log({"test_true": trues})
 
         # Log a table with preds and trues
         # test_df = pandas.DataFrame(data=np.concatenate([preds, trues], axis=1), columns=[f"pred_{i}" for i in range(preds.shape[1])] + [f"true_{i}" for i in range(trues.shape[1])])
@@ -591,9 +591,9 @@ class Exp_Main(Exp_Basic):
         # wandb.log({"test_table": wandb.Table(dataframe=test_df)})
 
         #in case the log doesn't work
-        artifact = wandb.Artifact("predictions", type="dataset")
-        artifact.add_dir(f"{folder_path}/")
-        wandb.log_artifact(artifact)
+        # artifact = wandb.Artifact("predictions", type="dataset")
+        # artifact.add_dir(f"{folder_path}/")
+        # wandb.log_artifact(artifact)
         
         return
 
