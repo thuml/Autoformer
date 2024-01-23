@@ -70,8 +70,6 @@ class Exp_Main(Exp_Basic):
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
         else: 
             constraint_levels = torch.zeros(self.args.pred_len, device=device)
-        for i, eps in enumerate(constraint_levels):
-                wandb.log({f"constraint/{i}": eps},commit=False)
         #return constraint_levels
         return constraint_levels.detach() #Don't really need gradients for it
 
@@ -94,7 +92,7 @@ class Exp_Main(Exp_Basic):
         constraint_levels = self._create_constraint_levels_tensor()
         
         for i, eps in enumerate(constraint_levels):
-                wandb.log({f"constraint/{i}": eps})
+                wandb.log({f"constraint/{i}": eps},commit=False)
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
