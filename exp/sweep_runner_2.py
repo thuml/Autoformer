@@ -1,9 +1,12 @@
+"""
+Script to run sweeps 2.0. Before, we used YAMLs. Now we use the wandb API on python.
+"""
 import yaml
 import os
 import wandb
 
 ###### SCRIPT PARAMETERS
-WANDB_PROJECT="Autoformer-javierdev"
+WANDB_PROJECT="Autoformer"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
@@ -15,6 +18,7 @@ EXPERIMENT_DESCRIPTION='Finaljan batch of constrained runs'#extra description ad
 
 #MODELS = ["Autoformer","Reformer"]
 MODELS = ["Autoformer","Reformer","Informer","Transformer"]
+DATASETS=["weather.csv","electricity.csv","exchange_rate.csv"]
 #PRED_LENGTHS = [96] # If constrained must run one at a time
 PRED_LENGTHS = [96,192,336,720]
 NUM_SEEDS=3
@@ -23,12 +27,12 @@ if len(MODELS)>1:
 else:
     MODEL_DICT = {"value": MODELS[0]}
 
-#TODO generate one for each dataset (electricity, weather )
+
 DATASET_DEPENDENT={
   "weather.csv":{
     'root_path': {'value': './dataset/weather/'},
     'data_path': {'value': 'weather.csv'},
-    'model_id': {'value': 'weather_constrained'},#TODO parameterize
+    'model_id': {'value': 'placeholder'},
     'enc_in': {'value': 21},
     'dec_in': {'value': 21},
     'c_out': {'value': 21},
@@ -38,7 +42,7 @@ DATASET_DEPENDENT={
   "electricity.csv":{
     'root_path': {'value': './dataset/electricity/'},
     'data_path': {'value': 'electricity.csv'},
-    'model_id': {'value': 'electricity_constrained'},
+    'model_id': {'value': 'placeholder'},
     'enc_in': {'value': 321},
     'dec_in': {'value': 321},
     'c_out': {'value': 321},
@@ -48,7 +52,7 @@ DATASET_DEPENDENT={
   "exchange_rate.csv":{
     'root_path': {'value': './dataset/exchange_rate/'},
     'data_path': {'value': 'exchange_rate.csv'},
-    'model_id': {'value': 'exchange_constrained'},
+    'model_id': {'value': 'placeholder'},
     'enc_in': {'value': 8},
     'dec_in': {'value': 8},
     'c_out': {'value': 8},
@@ -139,13 +143,12 @@ TEMPLATE={
         **DOCUMENTATION_PARAMS,
         #**DATASET_DEPENDENT, #will be added later
         "model":MODEL_DICT,
-        'pred_len': {'value': 0},#TODO PARAMETERIZE
+        'pred_len': {'value': 0},
         **CONSTRAINT_PARAMS,
         #Other params that don't change much
         'train_epochs': {'value': 10},
         'is_training': {'value': '1'},
-        #TODO PARAMETERIZE DATASET_DEPENDENT
-        'seq_len': {'value': 96}, #TODO confirm, does this change with pred len? I don't think so.
+        'seq_len': {'value': 96}, 
         'label_len': {'value': 48},
         'e_layers': {'value': 2},
         'd_layers': {'value': 1},
@@ -160,7 +163,7 @@ TEMPLATE={
 print("Starting sweep generation")
 sweep_commands = []
 for num_seed in range(1,NUM_SEEDS+1):
-  for data_path in ["weather.csv","electricity.csv","exchange_rate.csv"]:
+  for data_path in DATASETS:
     for model in MODELS:
         for pred_len in PRED_LENGTHS:
               sweep_config = TEMPLATE.copy()
@@ -185,4 +188,5 @@ for num_seed in range(1,NUM_SEEDS+1):
               #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
               with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
                   yaml.dump(sweep_config,f,sort_keys=False)
-sweep_commands
+print("Run the following commands: ")
+print(sweep_commands)
