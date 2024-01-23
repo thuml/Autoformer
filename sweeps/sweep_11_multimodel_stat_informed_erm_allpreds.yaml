@@ -14,12 +14,14 @@ parameters:
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer","Informer"] #original
+    values: ["Autoformer","Reformer","Informer","Transformer"] #original
     #value: "Reformer" # rerun of failed one.
   train_epochs:
     value: 10
   constraint_level:
     value: -1
+  constraint_type: 
+    value: "erm"
   dual_init:
     value: 0.0
   dual_lr:

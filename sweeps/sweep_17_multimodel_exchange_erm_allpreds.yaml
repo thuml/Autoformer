@@ -15,11 +15,13 @@ parameters:
   des:
     value: "ERM 10e baseline"
   model:
-    values: ["Autoformer","Reformer","Informer"]
+    values: ["Autoformer","Reformer","Informer","Transformer"]
   train_epochs:
     value: 10
   constraint_level: #signals that we're doing ERM
     value: -1
+  constraint_type: 
+    value: "erm"
   dual_init: #Irrelevant for ERM
     value: 1.0
   dual_lr: #signals that we're doing ERM
