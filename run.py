@@ -21,7 +21,7 @@ def main():
     
     # logging
     # eval steps
-    parser.add_argument('--eval_steps', type=int, default=220, help='Test every eval_steps')
+    parser.add_argument('--eval_steps', type=int, default=440, help='Test every eval_steps')
 
     # data loader
     parser.add_argument('--data', type=str, required=True, default='ETTm1', help='dataset type')

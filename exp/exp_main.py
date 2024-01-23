@@ -64,7 +64,6 @@ class Exp_Main(Exp_Basic):
         # Setting vector of constraints if running linear or constant constrained.
         device = self.device
         if self.args.constraint_type == "static_linear" or self.args.constraint_type == "dynamic_linear":
-            print("Running linear constraint. Logging constraint levels.")
             constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(device)
         elif self.args.constraint_type == "constant":
             #TODO run and test that dimensions match the above.
@@ -72,12 +71,16 @@ class Exp_Main(Exp_Basic):
         else: 
             constraint_levels = torch.zeros(self.args.pred_len, device=device)
         for i, eps in enumerate(constraint_levels):
-                wandb.log({f"constraint/{i}": eps})
-        return constraint_levels
+                wandb.log({f"constraint/{i}": eps},commit=False)
+        #return constraint_levels
+        return constraint_levels.detach() #Don't really need gradients for it
 
     def _select_criterion(self):
         #criterion = nn.MSELoss()
         return lambda x, y: ((x-y)**2).mean(dim=(0, 2))#criterion
+    
+    def _rename_dict(self,d, suffix):
+                        return {f"{key}/{suffix}": val for key, val in d.items()}
 
     def train(self, setting):
         train_data, train_loader = self._get_data(flag='train')
@@ -149,9 +152,10 @@ class Exp_Main(Exp_Basic):
                     outputs = outputs[:, -self.args.pred_len:, f_dim:]
                     batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     raw_loss = criterion(outputs, batch_y)
+                    detached_raw_loss = raw_loss.detach()
 
                     # Calculate other metrics for logging (detach and convert to numpy)
-                    train_mae, train_mse, train_mse, train_mape, train_mspe = metric(
+                    train_mae, train_mse, train_rmse, train_mape, train_mspe = metric(
                         pred=outputs.detach().cpu().numpy(), 
                         true=batch_y.detach().cpu().numpy()
                     )
@@ -163,7 +167,7 @@ class Exp_Main(Exp_Basic):
                         constrained_loss = raw_loss.mean()
                     elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
                         constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
-                        multipliers += (self.args.dual_lr * (raw_loss.detach() - constraint_levels)).clamp(min=0.)
+                        multipliers += (self.args.dual_lr * (detached_raw_loss - constraint_levels)).clamp(min=0.)
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                     elif self.args.constraint_type == "dynamic_linear":
                         raise NotImplementedError("dynamic_linear constraint not implemented yet.")
@@ -191,24 +195,40 @@ class Exp_Main(Exp_Basic):
                     #TODO address duplicates between this and end of epoch.
                     # Calculating how many violate feasibility
                     # TODO WARNING this will only work in the constant case.
-                    train_num_infeasibles = (raw_loss > constraint_levels).sum()
+                    train_num_infeasibles = (detached_raw_loss > constraint_levels).sum()
                     train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
                     print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
 
                     #Run validation set
-                    vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate = self.vali(vali_data, vali_loader, criterion)
-                    test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate= self.vali(test_data, test_loader, criterion)
+                    vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate, val_loss_distr_metrics, val_loss_distr_metrics_per_timestep = self.vali(vali_data, vali_loader, criterion)
+                    
+                    # Append /val to the val_loss_distr_metrics
+                    val_loss_distr_metrics = self._rename_dict(val_loss_distr_metrics, "val")
+                    val_loss_distr_metrics_per_timestep = self._rename_dict(val_loss_distr_metrics_per_timestep, "val")
+
+                    test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate, test_loss_distr_metrics, test_loss_distr_metrics_per_timestep = self.vali(test_data, test_loader, criterion)
+                    # Append /test to the test_loss_distr_metrics
+                    test_loss_distr_metrics = self._rename_dict(test_loss_distr_metrics, "test")
+                    test_loss_distr_metrics_per_timestep = self._rename_dict(test_loss_distr_metrics_per_timestep, "test")
 
                     val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
                     test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
+                    
+                    steps = torch.arange(self.args.pred_len).detach().cpu().numpy()
+
+                    train_linearity = pearsonr(steps,detached_raw_loss.cpu().numpy())[0]
+                    vali_linearity = pearsonr(steps,vali_losses)[0]
+                    test_linearity = pearsonr(steps,test_losses)[0]
 
                     avg_train_loss = np.average(train_loss)
                     
+                    # Intra epoch logging
                     wandb.log(
                         {   
                             # train
                             "mse/train": avg_train_loss,
+                            "linearity/train": train_linearity,
                             "mse/val": vali_loss,
                             "mse/test": test_loss,
                             
@@ -217,12 +237,14 @@ class Exp_Main(Exp_Basic):
                             "rmse/val": val_rmse,
                             "mape/val": val_mape,
                             "mspe/val": val_mspe,
+                            "linearity/val": vali_linearity,
 
                             # test metrics
                             "mae/test": test_mae,
                             "rmse/test": test_rmse,
                             "mape/test": test_mape,
                             "mspe/test": test_mspe,
+                            "linearity/test": test_linearity,
 
                             # infeasibles
                             "infeasibles/train": train_num_infeasibles, 
@@ -231,12 +253,15 @@ class Exp_Main(Exp_Basic):
                             "infeasible_rate/val": val_avg_infeasiblity_rate,
                             "infeasibles/test": test_infeasibilities,
                             "infeasible_rate/test": test_avg_infeasiblity_rate,
-
                             "epoch":epoch+1,
+
+                            # loss distribution metrics
+                            **val_loss_distr_metrics,
+                            **test_loss_distr_metrics,
                         },
                         commit=False
                     )
-
+                # End of batch logging
                 wandb.log(
                         {   
                             "loss": constrained_loss.detach().cpu().item(),
@@ -254,17 +279,30 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            train_num_infeasibles = (raw_loss > constraint_levels).sum()
+            train_num_infeasibles = (raw_loss.detach() > constraint_levels).sum()
             train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
 
-            # Run validation again for end of epoch logging
-            vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate = self.vali(vali_data, vali_loader, criterion)
-            test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate= self.vali(test_data, test_loader, criterion)
+            #Run validation set again for epoch logging. TODO remove code duplication.
+            vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate, val_loss_distr_metrics, val_loss_distr_metrics_per_timestep = self.vali(vali_data, vali_loader, criterion)
+            
+            # Append /val to the val_loss_distr_metrics
+            val_loss_distr_metrics = self._rename_dict(val_loss_distr_metrics, "val")
+            val_loss_distr_metrics_per_timestep = self._rename_dict(val_loss_distr_metrics_per_timestep, "val")
+
+            test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate, test_loss_distr_metrics, test_loss_distr_metrics_per_timestep = self.vali(test_data, test_loader, criterion)
+            # Append /test to the test_loss_distr_metrics
+            test_loss_distr_metrics = self._rename_dict(test_loss_distr_metrics, "test")
+            test_loss_distr_metrics_per_timestep = self._rename_dict(test_loss_distr_metrics_per_timestep, "test")
 
             val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
             test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
+
+            steps = torch.arange(self.args.pred_len).detach().cpu().numpy()
+            train_linearity = pearsonr(steps,raw_loss.detach().cpu().numpy())[0]
+            vali_linearity = pearsonr(steps,vali_losses)[0]
+            test_linearity = pearsonr(steps,test_losses)[0]
 
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, avg_epoch_train_loss, vali_loss, test_loss))
@@ -284,6 +322,13 @@ class Exp_Main(Exp_Basic):
             if multipliers is not None:
                 for i, multiplier in enumerate(multipliers):
                     wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
+            
+            # Logging loss distribution metrics per timestep. No need to zip val test
+            for loss_distr_metrics in [val_loss_distr_metrics_per_timestep, test_loss_distr_metrics_per_timestep]:
+                for metric_name, metric_value in loss_distr_metrics.items():
+                    for i, value in enumerate(metric_value):
+                        wandb.log({f"{metric_name}/{i}": value, "epoch":epoch+1},commit=False)
+
 
             # Early stopping, checkpointing, LR adj
             early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
@@ -296,6 +341,7 @@ class Exp_Main(Exp_Basic):
                     adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
                     scheduler.step()
             
+            #End of epoch logging
             # Log all metrics together
             wandb.log(
                 {   
@@ -303,18 +349,21 @@ class Exp_Main(Exp_Basic):
                     "mse/train": avg_epoch_train_loss,
                     "mse/val": vali_loss,
                     "mse/test": test_loss,
+                    "linearity/train": train_linearity,
                     
                     # val metrics
                     "mae/val": val_mae,
                     "rmse/val": val_rmse,
                     "mape/val": val_mape,
                     "mspe/val": val_mspe,
+                    "linearity/val": vali_linearity,
 
                     # test metrics
                     "mae/test": test_mae,
                     "rmse/test": test_rmse,
                     "mape/test": test_mape,
                     "mspe/test": test_mspe,
+                    "linearity/test": test_linearity,
 
                     # infeasibles
                     "infeasibles/train": train_num_infeasibles,
@@ -324,6 +373,10 @@ class Exp_Main(Exp_Basic):
                     "infeasibles/test": test_infeasibilities,
                     "infeasible_rate/test": test_avg_infeasiblity_rate,
                     "epoch":epoch+1,
+
+                    # loss distribution metrics
+                    **val_loss_distr_metrics,
+                    **test_loss_distr_metrics,
                 },
                 commit=True
             )
@@ -352,6 +405,7 @@ class Exp_Main(Exp_Basic):
         total_losses = []
         total_metrics=[]
         total_infeasibilities = []
+        unaggregated_losses = []
 
         constraint_levels = self._create_constraint_levels_tensor()
 
@@ -384,14 +438,17 @@ class Exp_Main(Exp_Basic):
 
                 # Compute metrics (detach and convert to numpy)
                 mae, mse, rmse, mape, mspe = metric(pred=outputs.detach().cpu().numpy(), true=batch_y.detach().cpu().numpy())
-
+                
                 loss = criterion(pred, true)
+
+                # Shape (batch_size, pred_len, out_dim). Average losses over out_dim.
+                all_losses_per_window_example=((pred-true)**2).mean(dim=(2))
                 
                 vali_num_infeasibles = (loss > constraint_levels).sum()
                 #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
 
                     #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
-
+                unaggregated_losses.append(all_losses_per_window_example.detach().cpu().numpy())
                 total_loss.append(loss.mean().item())
                 total_losses.append(loss.cpu().numpy())
                 total_metrics.append([mae, mse, rmse, mape, mspe])
@@ -403,10 +460,50 @@ class Exp_Main(Exp_Basic):
         total_infeasibilities = np.average(total_infeasibilities)
         average_infeasiblity_rate = total_infeasibilities / self.args.pred_len
 
+        unaggregated_losses = np.concatenate(unaggregated_losses, axis=0)
+
+        # Compute descriptive statistics (IQR, median,max,min) over all examples and timesteps
+        pct_25 = np.percentile(unaggregated_losses, 25)
+        pct_50 = np.percentile(unaggregated_losses, 50)
+        pct_75 = np.percentile(unaggregated_losses, 75)
+        pct_95 = np.percentile(unaggregated_losses, 95) #var_risk
+        pct_99 = np.percentile(unaggregated_losses, 99) #var_risk
+        std = np.std(unaggregated_losses)
+        max = np.max(unaggregated_losses)
+
+        # Per timestep statistics
+        pct_25_per_timestep = np.percentile(unaggregated_losses, 25, axis=0)
+        pct_50_per_timestep = np.percentile(unaggregated_losses, 50, axis=0)
+        pct_75_per_timestep = np.percentile(unaggregated_losses, 75, axis=0)
+        pct_95_per_timestep = np.percentile(unaggregated_losses, 95, axis=0) #var_risk
+        pct_99_per_timestep = np.percentile(unaggregated_losses, 99, axis=0) #var_risk
+        std_per_timestep = np.std(unaggregated_losses, axis=0)
+        max_per_timestep = np.max(unaggregated_losses, axis=0)
+
+        # Loss distribution metrics
+        loss_distribution_metrics = {
+            "pct_25":pct_25,
+            "pct_50":pct_50,
+            "pct_75":pct_75,
+            "pct_95":pct_95,
+            "pct_99":pct_99,
+            "std":std,
+            "max":max,
+        }
+        loss_distribution_metrics_per_timestep = {
+            "pct_25_per_timestep":pct_25_per_timestep,
+            "pct_50_per_timestep":pct_50_per_timestep,
+            "pct_75_per_timestep":pct_75_per_timestep,
+            "pct_95_per_timestep":pct_95_per_timestep,
+            "pct_99_per_timestep":pct_99_per_timestep,
+            "std_per_timestep":std_per_timestep,
+            "max_per_timestep":max_per_timestep,
+        }
+
         # nasty way to pass all metrics together.
         metrics = tuple(total_metrics.mean(axis=0))
         self.model.train()
-        return total_loss, total_losses.mean(axis=0), metrics, total_infeasibilities, average_infeasiblity_rate
+        return total_loss, total_losses.mean(axis=0), metrics, total_infeasibilities, average_infeasiblity_rate,loss_distribution_metrics,loss_distribution_metrics_per_timestep
 
     def test(self, setting, test=0):
         test_data, test_loader = self._get_data(flag='test')
