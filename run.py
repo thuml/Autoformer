@@ -10,6 +10,10 @@ from datetime import datetime
 
 
 def main():
+    random.seed(2021)
+    torch.manual_seed(2021)
+    np.random.seed(2021)
+
     parser = argparse.ArgumentParser(description='Autoformer & Transformer family for Time Series Forecasting')
 
     # basic config
@@ -65,7 +69,7 @@ def main():
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=2, help='experiments times')
-    parser.add_argument('--train_epochs', type=int, help='train epochs')
+    parser.add_argument('--train_epochs', default=10,type=int, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
@@ -129,10 +133,6 @@ def main():
         print(f"Using user provided seed")
     print(f"Seed is {args.seed}, this will be reflected in wandb config.")
     
-
-    random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    np.random.seed(args.seed)
     
 
     print("Starting run with args")
