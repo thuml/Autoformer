@@ -332,13 +332,13 @@ class Exp_Main(Exp_Basic):
 
             # Early stopping, checkpointing, LR adj
             early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
-            if early_stopping.early_stop:
-                print(f"Early stopping at epoch {epoch}")
-                break
-            # if early_stopping.early_stop and not early_stopped_before:
-            #     print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")
-            #     wandb.log({"early_stopped_epoch":epoch+1, "epoch":epoch+1},commit=False)
-            #     early_stopped_before=True
+            # if early_stopping.early_stop:
+            #     print(f"Early stopping at epoch {epoch}")
+            #     break
+            if early_stopping.early_stop and not early_stopped_before:
+                print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")
+                wandb.log({"early_stopped_epoch":epoch+1, "epoch":epoch+1},commit=False)
+                early_stopped_before=True
             
             if self.args.lradj == 'TST':
                     adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
