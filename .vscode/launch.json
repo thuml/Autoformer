@@ -13,14 +13,15 @@
             "justMyCode": true,
             "args": [
                 "--wandb_project", "Autoformer-javierdev",
-                "--wandb_run", "dev-Refactoring",
+                //"--wandb_run", "dev-Refactoring",
+                "--wandb_run", "debugging",
                 "--experiment_tag", "e0_exploration_runs",
-                "--seed","0",
+                "--seed","2021",
                 "--des","Exploration",
                 //Accelerator Actually for MPS just leave blank
                 // "--use-gpu",
                 // "",
-                "--model","Informer",
+                "--model","Autoformer",
                 //"--model","Informer",
                 
                 "--is_training","1",
@@ -33,7 +34,7 @@
                 //Experiment Params
                 "--seq_len","96",
                 "--label_len","48",
-                "--pred_len","96",
+                "--pred_len","192",
                 "--e_layers","2",
                 "--d_layers","1",
                 "--factor","3",
@@ -47,7 +48,7 @@
                 // "--dec_in","8",
                 // "--c_out","8",
                 //Parameters that matter
-                "--train_epochs","2",
+                "--train_epochs","10",
                 "--itr","1",
                 //Constraint parameters
                 // "--constraint_type","erm",
@@ -62,11 +63,12 @@
                 // "--constraint_level","0.169",
 
                 //Constraint parameters static_linear
-                "--constraint_type","static_linear",
-                "--dual_init", "1.0",
-                "--dual_lr","0.01", //ERM
-                "--constraint_slope","0.005",
-                "--constraint_offset","0.169",
+                "--constraint_type","erm",
+                // "--constraint_type","static_linear",
+                "--dual_init", "0.1",
+                "--dual_lr","0.1", //ERM
+                // "--constraint_slope","0.005",
+                // "--constraint_offs`et","0.169",
 
                 
 
@@ -125,7 +127,7 @@
                 "--constraint_level", "-1", //ERM
                 "--dual_init", "0.0",
             ]
-        }
+        },
         {
             "name": "Exp main",
             "type": "python",
