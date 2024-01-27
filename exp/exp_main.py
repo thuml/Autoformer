@@ -167,8 +167,10 @@ class Exp_Main(Exp_Basic):
                         constrained_loss = raw_loss.mean()
                     elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
                         constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
-                        multipliers += (self.args.dual_lr * (detached_raw_loss - constraint_levels)).clamp(min=0.)
+                        multipliers += (self.args.dual_lr * (detached_raw_loss - constraint_levels))
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                        #TODO uncomment for dual restarts.
+                        #multipliers = multipliers * (raw_loss > constraint_levels).float()
                     elif self.args.constraint_type == "dynamic_linear":
                         raise NotImplementedError("dynamic_linear constraint not implemented yet.")
                     elif self.args.constraint_type == "resilience":

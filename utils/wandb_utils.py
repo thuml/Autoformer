@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 
 # Todo save in a file
-def get_experiment_data(project,workspace,experiment_tags):
+def get_experiment_data(project,workspace,experiment_tags,state='finished'):
     """
     Downloads wandb data and returns a DataFrame with the relevant information from the experiment
     """
@@ -14,7 +14,7 @@ def get_experiment_data(project,workspace,experiment_tags):
     runs = api.runs(f"{workspace}/{project}",
                     {"$and": [
                         {"tags": {"$in": experiment_tags}},
-                        {"state": "finished"}
+                        {"state": state}
                     ]})
 
     def tag_experiment(run):
@@ -42,14 +42,16 @@ def get_experiment_data(project,workspace,experiment_tags):
                     run_dict["epoch"]=run.summary["epoch"]
                     run_dict["infeasible_rate"]=run.summary[f"infeasible_rate/{split}"]
                     run_dict["infeasibles"]=run.summary[f"infeasibles/{split}"]
-                    run_dict[f"multiplier"] = run.summary[f"multiplier/{i}"] if split == "train" else np.nan
+                    run_dict[f"multiplier"] = run.summary[f"multiplier/{i}"] if split == "train" and f"multiplier/{i}" in run.summary else np.nan
                     run_dict["split"] = split
                     run_dict["run_id"] = run.id
                     # Get either Constrained/ or ERM/ from the run name, then append model name.
                     #print("run.name", run.name)
                     #debug if ERM run
+                    run_dict['run_name'] = run.name
                     run_dict["Algorithm"] = f"{run.name.split('/')[0]} {run.config['model']}"
-                    run_dict["sweep_id"] = run.sweep.id
+                    sweep_id = run.sweep.id if run.sweep else np.nan
+                    run_dict["sweep_id"] = sweep_id
                     #print("Algorithm", run_dict["Algorithm"])
 
                     # Get the experiment tag
