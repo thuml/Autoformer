@@ -166,7 +166,12 @@ class Exp_Main(Exp_Basic):
                     if self.args.constraint_type == "erm":
                         constrained_loss = raw_loss.mean()
                     elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
-                        constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
+                        if not self.args.sampling:
+                            constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
+                        else:
+                            probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
+                            sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
+                            constrained_loss = raw_loss[sampled_indexes].mean()
                         multipliers += self.args.dual_lr * (detached_raw_loss - constraint_levels)
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                     elif self.args.constraint_type == "monotonic":
