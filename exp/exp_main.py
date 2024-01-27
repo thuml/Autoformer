@@ -86,7 +86,7 @@ class Exp_Main(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
 
         # Initializing multipliers for constraint optimization
-        multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
+        multipliers = torch.ones(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)*self.args.dual_init
         
         # Setting vector of constraints if running linear or constant constrained.
         constraint_levels = self._create_constraint_levels_tensor()
@@ -106,8 +106,10 @@ class Exp_Main(Exp_Basic):
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
 
-        # TODO: PatchTST uses this. Do we want it? 
-        scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
+        # TODO: PatchTST uses this. Do we want it?
+        scheduler = None 
+        if False:
+            scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
                                             steps_per_epoch = train_steps,
                                             pct_start = self.args.pct_start,
                                             epochs = self.args.train_epochs,
@@ -165,7 +167,13 @@ class Exp_Main(Exp_Basic):
                         constrained_loss = raw_loss.mean()
                     elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
                         constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
-                        multipliers += (self.args.dual_lr * (detached_raw_loss - constraint_levels)).clamp(min=0.)
+                        multipliers += self.args.dual_lr * (detached_raw_loss - constraint_levels)
+                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                    elif self.args.constraint_type == "monotonic":
+                        constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
+                        constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
+                        constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
+                        multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-constraint_levels)
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                     elif self.args.constraint_type == "dynamic_linear":
                         raise NotImplementedError("dynamic_linear constraint not implemented yet.")
@@ -193,7 +201,10 @@ class Exp_Main(Exp_Basic):
                     #TODO address duplicates between this and end of epoch.
                     # Calculating how many violate feasibility
                     # TODO WARNING this will only work in the constant case.
-                    train_num_infeasibles = (detached_raw_loss > constraint_levels).sum()
+                    if self.args.constraint_type == "monotonic":
+                         train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
+                    else:
+                        train_num_infeasibles = (detached_raw_loss > constraint_levels).sum()
                     train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
                     print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -277,7 +288,10 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            train_num_infeasibles = (raw_loss.detach() > constraint_levels).sum()
+            if self.args.constraint_type == "monotonic":
+                train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
+            else:
+                train_num_infeasibles = (detached_raw_loss > constraint_levels).sum()
             train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -443,6 +457,10 @@ class Exp_Main(Exp_Basic):
                 all_losses_per_window_example=((pred-true)**2).mean(dim=(2))
                 
                 vali_num_infeasibles = (loss > constraint_levels).sum()
+                if self.args.constraint_type == "monotonic":
+                    vali_num_infeasibles = (loss[1:] > loss[:-1]).sum()
+                else:
+                    vali_num_infeasibles = (loss > constraint_levels).sum()
                 #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
 
                     #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")
