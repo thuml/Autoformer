@@ -96,6 +96,10 @@ def main():
     parser.add_argument('--dual_clip',  type=float, default=10.0, help='clip dual variables')
     parser.add_argument('--sampling', action='store_true', default=False, help='Wether sample time steps in Lagrangian')
 
+    # Resilient
+    parser.add_argument('--resilient_lr', type=float, default=0.0, help='Resilient learning rate')
+    parser.add_argument('--resilient_cost_alpha', type=float, default=2.0, help='resilient quadratic cost penalty')
+
     # PatchTST
     parser.add_argument('--fc_dropout', type=float, default=0.05, help='fully connected dropout')
     parser.add_argument('--head_dropout', type=float, default=0.0, help='head dropout')
