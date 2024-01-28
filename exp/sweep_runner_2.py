@@ -28,10 +28,10 @@ EXPERIMENT_DESCRIPTION='Constrained loose'
 MODELS = ["Autoformer","Reformer","Informer","Transformer"]
 DATASETS=["weather.csv","electricity.csv","exchange_rate.csv"]
 PRED_LENGTHS = [96,192,336,720]
-NUM_SEEDS=1 
+NUM_SEEDS=1
 #SEED=0 # IF 0 THEN RANDOM SEED
-SEED=2021 # The seed used by the literature
-#SEED=6163 # Seed 2.
+#SEED=2021 # The seed used by the literature
+SEED=6163 # Seed 2.
 ###################
 ###################
 print(f"Creating sweeps in project {WANDB_PROJECT}, namespace {NAMESPACE}")
