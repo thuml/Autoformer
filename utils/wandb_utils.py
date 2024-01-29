@@ -52,6 +52,7 @@ def get_experiment_data(project,workspace,experiment_tags,state='finished'):
                     run_dict["Algorithm"] = f"{run.name.split('/')[0]} {run.config['model']}"
                     sweep_id = run.sweep.id if run.sweep else np.nan
                     run_dict["sweep_id"] = sweep_id
+                    run_dict["sweep_name"] = run.sweep.name if run.sweep else np.nan
                     #print("Algorithm", run_dict["Algorithm"])
 
                     # Get the experiment tag
