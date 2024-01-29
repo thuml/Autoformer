@@ -4,18 +4,21 @@ import numpy as np
 from tqdm import tqdm
 
 # Todo save in a file
-def get_experiment_data(project,workspace,experiment_tags,state='finished'):
+def get_experiment_data(project,workspace,experiment_tags=[],state='finished',query_dict=None):
     """
-    Downloads wandb data and returns a DataFrame with the relevant information from the experiment
+    Downloads wandb data and returns a DataFrame with the relevant information from the experiment.
+    Either choose experiment_tags  and state, or pass a full query_dict to filter the runs.
     """
     api = wandb.Api()
-
-    # get all runs that both: 1.  match any experiment tag and 2. are finished
-    runs = api.runs(f"{workspace}/{project}",
-                    {"$and": [
+    
+    if query_dict is None:
+        query_dict={"$and": [
                         {"tags": {"$in": experiment_tags}},
                         {"state": state}
-                    ]})
+        ]}
+
+    # get all runs that both: 1.  match any experiment tag and 2. are finished
+    runs = api.runs(f"{workspace}/{project}",query_dict)
 
     def tag_experiment(run):
         for tag in experiment_tags:

@@ -68,8 +68,14 @@ class Exp_Main(Exp_Basic):
         elif self.args.constraint_type == "constant" or self.args.constraint_type == "resilience":
             #TODO run and test that dimensions match the above.
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
+        elif self.args.constraint_type == "monotonic": 
+            # set constraints to zero to enforce effectively (x_t<=x_{t+1}).
+            # TODO: nonzero constraint_levels in monotonic would mean a fixed bump (x_t<=x_{t+1}+eps) for all t. Implement if interested.
+            constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
+        elif self.args.constraint_type == "erm":
+            constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
         else: 
-            constraint_levels = torch.zeros(self.args.pred_len, device=device)
+            raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
         #TODO add monotonic constraint levels. 
         #return constraint_levels
         return constraint_levels.detach() #Don't really need gradients for it
