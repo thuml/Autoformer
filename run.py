@@ -88,7 +88,7 @@ def main():
     parser.add_argument('--experiment_tag', type=str, default='e0_untagged_experiment', help='wandb project')
 
     # Constrained
-    parser.add_argument('--constraint_type', type=str, help='Constraint type (erm,constant,static_linear,dynamic_linear,resilience)')
+    parser.add_argument('--constraint_type', type=str, help='Constraint type (erm,constant,static_linear,dynamic_linear,resilience,monotonic)')
     parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon) if using constant constraint_type')    
     parser.add_argument('--constraint_slope', type=float, help='Constraint slope if using static_linear or dynamic_linear')
     parser.add_argument('--constraint_offset', type=float, help='Constraint offset if using static_linear or dynamic_linear')
@@ -136,17 +136,11 @@ def main():
     print(f"Seed is {args.seed}, this will be reflected in wandb config.")
     
     #cast seed as int 
-    # seed = int(args.seed)
-    # random.seed(seed)
-    # torch.manual_seed(seed)
-    # np.random.seed(seed)
     seed = int(args.seed)
     random.seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
     
-    
-
     print("Starting run with args")
     print(args)
 

@@ -6,23 +6,22 @@ import os
 import wandb
 
 ###### SCRIPT PARAMETERS
-# WANDB_PROJECT="Autoformer-javierdev"
-WANDB_PROJECT="Autoformer"
+WANDB_PROJECT="Autoformer-javierdev"
+#WANDB_PROJECT="Autoformer"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-#SWEEP_NAME_PREFIX="Finaljan_ERM_replicated_noearlystop"
-SWEEP_NAME_PREFIX="Finaljan_ResilienceVal_moreconstraints"
-#EXPERIMENT_TAG="e17_finaljan_constant_constrained_replicated"
-EXPERIMENT_TAG="e19_icml_resilience_val"
-EXPERIMENT_DESCRIPTION='Resilience Val'
+SWEEP_NAME_PREFIX="Finaljan_Monotonic"
+EXPERIMENT_TAG="e20_icml_monotonic"
+EXPERIMENT_DESCRIPTION='Monotonic'
 
 # Constraint parameters
 # Constant
-CONSTRAINT_TYPE='resilience'
+#CONSTRAINT_TYPE='resilience'
 #CONSTRAINT_TYPE='constant'
+CONSTRAINT_TYPE='monotonic'
 DUAL_LR=0.01
 DUAL_INIT=1.0
 # Required if Resilience
@@ -163,18 +162,16 @@ CONSTRAINT_DATA={
   }
 }
 
-
-
-
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
   'constraint_type': {'value': CONSTRAINT_TYPE},
   'dual_init': {'value': DUAL_INIT},
   'dual_lr': {'value': DUAL_LR},
 }
-if CONSTRAINT_TYPE=='resilience':
+if CONSTRAINT_TYPE=='resilience' or CONSTRAINT_TYPE=='monotonic': #monotonic is resilience by default too
     CONSTRAINT_PARAMS['resilient_lr']={'value': RESILIENT_LR}
     CONSTRAINT_PARAMS['resilient_cost_alpha']={'value': 2.0}
+    
 print("Constraint params (before adding levels): ")
 print(CONSTRAINT_PARAMS)
 
@@ -242,16 +239,19 @@ for num_seed in range(1,NUM_SEEDS+1):
 
               # Add the constraint levels
               sweep_config["parameters"].update(CONSTRAINT_PARAMS)
-              if len(CONSTRAINT_DATA[data_path][model][pred_len]) == 1:
-                sweep_config["parameters"]["constraint_level"] = {"value": CONSTRAINT_DATA[data_path][model][pred_len][0]}  
-              elif len(CONSTRAINT_DATA[data_path][model][pred_len]) > 1: 
-                sweep_config["parameters"]["constraint_level"] = {"values": CONSTRAINT_DATA[data_path][model][pred_len]}
+              if CONSTRAINT_TYPE=='monotonic': # constraint_level-less
+                sweep_config["parameters"].pop("constraint_level")
               else:
-                raise ValueError("No constraint levels found for this model, dataset, and pred_len")
+                if len(CONSTRAINT_DATA[data_path][model][pred_len]) == 1:
+                  sweep_config["parameters"]["constraint_level"] = {"value": CONSTRAINT_DATA[data_path][model][pred_len][0]}  
+                elif len(CONSTRAINT_DATA[data_path][model][pred_len]) > 1: 
+                  sweep_config["parameters"]["constraint_level"] = {"values": CONSTRAINT_DATA[data_path][model][pred_len]}
+                else:
+                  raise ValueError("No constraint levels found for this model, dataset, and pred_len")
               # Update description, including params & seed number
               #print(sweep_config)
               sweep_id = wandb.sweep(sweep_config)
-              sweep_commands.append(f"wandb agent {NAMESPACE}/{WANDB_PROJECT}/{sweep_id}")
+              sweep_commands.append(sweep_id)
               # Write YAML file for debugging, with overwrite
               YAML_FILENAME=f"sweep_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}.yaml"
               #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
@@ -260,9 +260,18 @@ for num_seed in range(1,NUM_SEEDS+1):
 print("Run the following commands: \n\n")
 #print(sweep_commands)
 from functools import reduce
-result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
-print(result)
-print ("\n Done")
+# result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
+# print(result)
+# print ("\n Done")
+agents_array = reduce(lambda x, y: f"{x} {y}", sweep_commands)
+sweep_command=f"""
+agents=({agents_array})
+for agent in "${{agents[@]}}"
+do
+  wandb agent "{NAMESPACE}/{WANDB_PROJECT}/$agent"
+done
+"""
+print(sweep_command)
 
 #########
 
