@@ -199,7 +199,10 @@ class Exp_Main(Exp_Basic):
                         constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
                         constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
                         constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
-                        multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels+slacks))
+                        #Broken
+                        #multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels+slacks))
+                        #Fix
+                        multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels[1:]+slacks))
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                         slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
                         slacks = torch.clip(slacks, min=0.0)
