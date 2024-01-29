@@ -85,7 +85,8 @@ class Exp_Main(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
 
         # Initializing multipliers for constraint optimization
-        multipliers = torch.ones(self.args.pred_len, device=self.device)*self.args.dual_init
+        multipliers = torch.ones(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)*self.args.dual_init
+        slacks = torch.zeros(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)
         
         # Setting vector of constraints if running linear or constant constrained.
         constraint_levels = self._create_constraint_levels_tensor()
@@ -105,8 +106,10 @@ class Exp_Main(Exp_Basic):
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
 
-        # TODO: PatchTST uses this. Do we want it? 
+        # TODO: PatchTST uses this. Do we want it?
         if self.args.lradj == 'TST':
+            scheduler = None 
+        if False:
             scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
                                             steps_per_epoch = train_steps,
                                             pct_start = self.args.pct_start,
@@ -165,16 +168,33 @@ class Exp_Main(Exp_Basic):
 
                     if self.args.constraint_type == "erm":
                         constrained_loss = raw_loss.mean()
-                    elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear":
-                        constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
-                        multipliers += (self.args.dual_lr * (detached_raw_loss - constraint_levels))
-                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                        #TODO uncomment for dual restarts.
+                    elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type =="resilience":
+                        if not self.args.sampling:
+                            constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
+                        else:
+                            probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
+                            sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
+                            constrained_loss = raw_loss[sampled_indexes].mean()
+                        #TODO uncomment for dual restarts
                         #multipliers = multipliers * (raw_loss > constraint_levels).float()
+                        if self.args.constraint_type == "resilience":
+                            multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
+                            multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                            slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
+                            slacks = torch.clip(slacks, min=0.0)
+                        else: #Just constant.
+                            multipliers += self.args.dual_lr * (detached_raw_loss - constraint_levels)
+                            multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                    elif self.args.constraint_type == "monotonic":
+                        constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
+                        constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
+                        constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
+                        multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels+slacks))
+                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                        slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
+                        slacks = torch.clip(slacks, min=0.0)
                     elif self.args.constraint_type == "dynamic_linear":
                         raise NotImplementedError("dynamic_linear constraint not implemented yet.")
-                    elif self.args.constraint_type == "resilience":
-                        raise NotImplementedError("resilience constraint not implemented yet.")
                     else:
                         raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
                 if (i + 1) % 100 == 0:
@@ -197,7 +217,10 @@ class Exp_Main(Exp_Basic):
                     #TODO address duplicates between this and end of epoch.
                     # Calculating how many violate feasibility
                     # TODO WARNING this will only work in the constant case.
-                    train_num_infeasibles = (detached_raw_loss > constraint_levels).sum()
+                    if self.args.constraint_type == "monotonic":
+                         train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
+                    else:
+                        train_num_infeasibles = (detached_raw_loss > (constraint_levels+slacks)).sum()
                     train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
                     print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -281,7 +304,11 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            train_num_infeasibles = (raw_loss.detach() > constraint_levels).sum()
+            # TODO (ihounie): add slacks to validation infeasibility computation, or remove them from train.
+            if self.args.constraint_type == "monotonic":
+                train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
+            else:
+                train_num_infeasibles = (detached_raw_loss > (constraint_levels+slacks)).sum()
             train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
@@ -324,6 +351,9 @@ class Exp_Main(Exp_Basic):
             if multipliers is not None:
                 for i, multiplier in enumerate(multipliers):
                     wandb.log({f"multiplier/{i}": multiplier, "epoch":epoch+1},commit=False)
+            if self.args.resilient_lr>0:
+                for i, slack in enumerate(slacks):
+                    wandb.log({f"slack/{i}": slack, "epoch":epoch+1},commit=False)
             
             # Logging loss distribution metrics per timestep. No need to zip val test
             for loss_distr_metrics in [val_loss_distr_metrics_per_timestep, test_loss_distr_metrics_per_timestep]:
@@ -448,8 +478,12 @@ class Exp_Main(Exp_Basic):
 
                 # Shape (batch_size, pred_len, out_dim). Average losses over out_dim.
                 all_losses_per_window_example=((pred-true)**2).mean(dim=(2))
-                
-                vali_num_infeasibles = (loss > constraint_levels).sum()
+                # TODO (ihounie): add slacks to validation infeasibility computation, or remove them from train.
+                vali_num_infeasibles = (loss > (constraint_levels)).sum()
+                if self.args.constraint_type == "monotonic":
+                    vali_num_infeasibles = (loss[1:] > loss[:-1]).sum()
+                else:
+                    vali_num_infeasibles = (loss > (constraint_levels)).sum()
                 #vali_infeasible_rate = vali_num_infeasibles / self.args.pred_len
 
                     #print(f"Number of infeasibilities: {vali_num_infeasibles}/{self.args.pred_len} rate {vali_infeasible_rate}")

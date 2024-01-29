@@ -10,9 +10,6 @@ from datetime import datetime
 
 
 def main():
-    random.seed(2021)
-    torch.manual_seed(2021)
-    np.random.seed(2021)
 
     parser = argparse.ArgumentParser(description='Autoformer & Transformer family for Time Series Forecasting')
 
@@ -69,7 +66,7 @@ def main():
     # optimization
     parser.add_argument('--num_workers', type=int, default=10, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=2, help='experiments times')
-    parser.add_argument('--train_epochs', default=10,type=int, help='train epochs')
+    parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
@@ -98,6 +95,11 @@ def main():
     parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
     parser.add_argument('--dual_init',  type=float, help='dual var initialization')
     parser.add_argument('--dual_clip',  type=float, default=10.0, help='clip dual variables')
+    parser.add_argument('--sampling', action='store_true', default=False, help='Wether sample time steps in Lagrangian')
+
+    # Resilient
+    parser.add_argument('--resilient_lr', type=float, default=0.0, help='Resilient learning rate')
+    parser.add_argument('--resilient_cost_alpha', type=float, default=2.0, help='resilient quadratic cost penalty')
 
     # PatchTST
     parser.add_argument('--fc_dropout', type=float, default=0.05, help='fully connected dropout')
@@ -132,6 +134,12 @@ def main():
     else: 
         print(f"Using user provided seed")
     print(f"Seed is {args.seed}, this will be reflected in wandb config.")
+    
+    #cast seed as int 
+    seed = int(args.seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
     
     
 
