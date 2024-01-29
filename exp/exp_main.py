@@ -65,11 +65,12 @@ class Exp_Main(Exp_Basic):
         device = self.device
         if self.args.constraint_type == "static_linear" or self.args.constraint_type == "dynamic_linear":
             constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(device)
-        elif self.args.constraint_type == "constant":
+        elif self.args.constraint_type == "constant" or self.args.constraint_type == "resilience":
             #TODO run and test that dimensions match the above.
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
         else: 
             constraint_levels = torch.zeros(self.args.pred_len, device=device)
+        #TODO add monotonic constraint levels. 
         #return constraint_levels
         return constraint_levels.detach() #Don't really need gradients for it
 
@@ -107,8 +108,7 @@ class Exp_Main(Exp_Basic):
         criterion = self._select_criterion()
 
         # TODO: PatchTST uses this. Do we want it?
-        if self.args.lradj == 'TST':
-            scheduler = None 
+        scheduler = None 
         if False:
             scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
                                             steps_per_epoch = train_steps,
@@ -175,6 +175,10 @@ class Exp_Main(Exp_Basic):
                             probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
                             sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
                             constrained_loss = raw_loss[sampled_indexes].mean()
+                        # multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
+                        # multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                        # slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
+                        # slacks = torch.clip(slacks, min=0.0)
                         #TODO uncomment for dual restarts
                         #multipliers = multipliers * (raw_loss > constraint_levels).float()
                         if self.args.constraint_type == "resilience":

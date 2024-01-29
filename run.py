@@ -136,6 +136,10 @@ def main():
     print(f"Seed is {args.seed}, this will be reflected in wandb config.")
     
     #cast seed as int 
+    # seed = int(args.seed)
+    # random.seed(seed)
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
     seed = int(args.seed)
     random.seed(seed)
     torch.manual_seed(seed)

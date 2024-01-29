@@ -19,11 +19,16 @@ SWEEP_NAME_PREFIX="Finaljan_ConstConstr_loose"
 EXPERIMENT_TAG="e18_icml_constant_constrained_loose"
 EXPERIMENT_DESCRIPTION='Constrained loose'
 
-#MODELS = ["Autoformer","Reformer"]
-#TODO dev, comment out.
-# MODELS = ["Autoformer","Reformer"]
-# DATASETS=["weather.csv"]
-# PRED_LENGTHS=[96]
+# Constraint parameters
+# Constant
+CONSTRAINT_TYPE='constant'
+DUAL_LR=0.01
+DUAL_INIT=1.0
+# Resileince
+CONSTRAINT_TYPE='resilience'
+RESILIENT_LR=0.1
+
+
 #PROD PARAMETERS
 MODELS = ["Autoformer","Reformer","Informer","Transformer"]
 DATASETS=["weather.csv","electricity.csv","exchange_rate.csv"]
@@ -128,10 +133,15 @@ CONSTRAINT_DATA={'electricity.csv': {'Autoformer': {96: [0.151, 0.16, 0.166],
 
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
-  'constraint_type': {'value': 'constant'},
-  'dual_init': {'value': 1.0},
-  'dual_lr': {'value': 0.01},
+  'constraint_type': {'value': CONSTRAINT_TYPE},
+  'dual_init': {'value': DUAL_INIT},
+  'dual_lr': {'value': DUAL_LR},
 }
+if CONSTRAINT_TYPE=='resilience':
+    CONSTRAINT_PARAMS['resilient_lr']={'value': RESILIENT_LR}
+    CONSTRAINT_PARAMS['resilient_cost_alpha']={'value': 2.0}
+print("Constraint params (before adding levels): ")
+print(CONSTRAINT_PARAMS)
 
 SWEEP_HEADER={
   "program": "run.py",
