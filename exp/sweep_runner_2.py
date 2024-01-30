@@ -6,16 +6,16 @@ import os
 import wandb
 
 ###### SCRIPT PARAMETERS
-WANDB_PROJECT="Autoformer-javierdev"
-#WANDB_PROJECT="Autoformer"
+#WANDB_PROJECT="Autoformer-javierdev"
+WANDB_PROJECT="Autoformer"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-SWEEP_NAME_PREFIX="Finaljan_Monotonic"
-EXPERIMENT_TAG="e20_icml_monotonic"
-EXPERIMENT_DESCRIPTION='Monotonic'
+SWEEP_NAME_PREFIX="Finaljan_Monotonic_no_resilience"
+EXPERIMENT_TAG="e20_icml_monotonic_no_resilience"
+EXPERIMENT_DESCRIPTION='Monotonic_no_resilience'
 
 # Constraint parameters
 # Constant
@@ -24,10 +24,11 @@ EXPERIMENT_DESCRIPTION='Monotonic'
 CONSTRAINT_TYPE='monotonic'
 DUAL_LR=0.01
 DUAL_INIT=1.0
+
 # Required if Resilience
-RESILIENT_LR=0.1
-
-
+#RESILIENT_LR=0.1
+# Use if monotonic_no_resilience
+RESILIENT_LR=0.0
 
 #PROD PARAMETERS
 MODELS = ["Autoformer","Reformer","Informer","Transformer"]
@@ -168,9 +169,12 @@ CONSTRAINT_PARAMS={
   'dual_init': {'value': DUAL_INIT},
   'dual_lr': {'value': DUAL_LR},
 }
-if CONSTRAINT_TYPE=='resilience' or CONSTRAINT_TYPE=='monotonic': #monotonic is resilience by default too
+if RESILIENT_LR>0:
     CONSTRAINT_PARAMS['resilient_lr']={'value': RESILIENT_LR}
     CONSTRAINT_PARAMS['resilient_cost_alpha']={'value': 2.0}
+else:
+    CONSTRAINT_PARAMS['resilient_lr']={'value': 0.0}
+    CONSTRAINT_PARAMS['resilient_cost_alpha']={'value': 0.0}
     
 print("Constraint params (before adding levels): ")
 print(CONSTRAINT_PARAMS)

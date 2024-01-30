@@ -68,11 +68,7 @@ class Exp_Main(Exp_Basic):
         elif self.args.constraint_type == "constant" or self.args.constraint_type == "resilience":
             #TODO run and test that dimensions match the above.
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
-        elif self.args.constraint_type == "monotonic": 
-            # set constraints to zero to enforce effectively (x_t<=x_{t+1}).
-            # TODO: nonzero constraint_levels in monotonic would mean a fixed bump (x_t<=x_{t+1}+eps) for all t. Implement if interested.
-            constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
-        elif self.args.constraint_type == "erm":
+        elif self.args.constraint_type == "erm" or self.args.constraint_type == "monotonic":
             constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
         else: 
             raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
@@ -92,7 +88,7 @@ class Exp_Main(Exp_Basic):
         test_data, test_loader = self._get_data(flag='test')
 
         # Initializing multipliers for constraint optimization
-        multipliers = torch.ones(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)*self.args.dual_init
+        multipliers = torch.ones(self.args.pred_len-(self.args. constraint_type == "monotonic"), device=self.device)*self.args.dual_init
         slacks = torch.zeros(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)
         
         # Setting vector of constraints if running linear or constant constrained.
@@ -172,6 +168,7 @@ class Exp_Main(Exp_Basic):
                     train_losses.append(raw_loss.cpu().detach())
                     train_loss.append(raw_loss.mean().item())
 
+                    # Constraint optimization
                     if self.args.constraint_type == "erm":
                         constrained_loss = raw_loss.mean()
                     elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type =="resilience":
@@ -181,35 +178,27 @@ class Exp_Main(Exp_Basic):
                             probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
                             sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
                             constrained_loss = raw_loss[sampled_indexes].mean()
-                        # multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
-                        # multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                        # slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
-                        # slacks = torch.clip(slacks, min=0.0)
                         #TODO uncomment for dual restarts
                         #multipliers = multipliers * (raw_loss > constraint_levels).float()
-                        if self.args.constraint_type == "resilience":
-                            multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
-                            multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                            slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
-                            slacks = torch.clip(slacks, min=0.0)
-                        else: #Just constant.
-                            multipliers += self.args.dual_lr * (detached_raw_loss - constraint_levels)
-                            multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                        multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
+                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                     elif self.args.constraint_type == "monotonic":
                         constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
                         constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
                         constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
-                        #Broken
-                        #multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels+slacks))
-                        #Fix
+                        
                         multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels[1:]+slacks))
                         multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                        slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
-                        slacks = torch.clip(slacks, min=0.0)
                     elif self.args.constraint_type == "dynamic_linear":
                         raise NotImplementedError("dynamic_linear constraint not implemented yet.")
                     else:
                         raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
+                    
+                    #If resilience activated
+                    if self.args.resilient_lr > 0:
+                        slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
+                        slacks = torch.clip(slacks, min=0.0)
+                    #####End of the patchtst's else. 
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
                     speed = (time.time() - time_now) / iter_count
