@@ -4,12 +4,12 @@ import numpy as np
 from tqdm import tqdm
 
 # Todo save in a file
-def get_experiment_data(project,workspace,experiment_tags=[],state='finished',query_dict=None):
+def get_experiment_data(project,workspace,experiment_tags=[],state='finished',query_dict=None,timeout=60):
     """
     Downloads wandb data and returns a DataFrame with the relevant information from the experiment.
     Either choose experiment_tags  and state, or pass a full query_dict to filter the runs.
     """
-    api = wandb.Api()
+    api = wandb.Api(timeout=timeout)
     
     if query_dict is None:
         query_dict={"$and": [
@@ -60,6 +60,13 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
 
                     # Get the experiment tag
                     run_dict["experiment_tag"] = tag_experiment(run)
+                    
+                    if run_dict["constraint_type"] == "resilience": #Rename pre-refactor runs for consistency.
+                        run_dict["constraint_type"] = "constant_resilience"
+                    else:
+                        if "resilient_lr" in run.config and run.config['resilient_lr'] > 0:
+                            run_dict["constraint_type"] = run_dict["constraint_type"] + "_resilience"
+                        
 
                     # To better plot constrained vs ERM
                     #TODO this is a hack while I consolidate the tags. 
