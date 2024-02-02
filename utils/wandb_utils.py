@@ -31,9 +31,11 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
     all_runs = []
     run_counter = 0
     for run in tqdm(runs):
+        if "pointwise/cvar/0.01" not in run.summary:
+            print(f"WARNING!! Missing pointwise/cvar/0.01 in run {run.id} on sweep {run.sweep.name}. Filling all poitwisewith NAN.")
         run_counter += 1
         for split in ["train", "test","val"]:
-            for metric in ["mse",]:
+            for metric in ["mse"]:
                 pred_len = run.config["pred_len"]
                 metrics = np.zeros(pred_len)
                 for i in range(pred_len):
@@ -46,6 +48,7 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
                     run_dict["infeasible_rate"]=run.summary[f"infeasible_rate/{split}"]
                     run_dict["infeasibles"]=run.summary[f"infeasibles/{split}"]
                     run_dict[f"multiplier"] = run.summary[f"multiplier/{i}"] if split == "train" and f"multiplier/{i}" in run.summary else np.nan
+                    
                     run_dict["split"] = split
                     run_dict["run_id"] = run.id
                     # Get either Constrained/ or ERM/ from the run name, then append model name.
@@ -66,8 +69,42 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
                     else:
                         if "resilient_lr" in run.config and run.config['resilient_lr'] > 0:
                             run_dict["constraint_type"] = run_dict["constraint_type"] + "_resilience"
-                        
-
+                    
+                    run_dict[f"linearity/{split}"] = run.summary[f"linearity/{split}"]
+                    run_dict["pct_50_total_test"] = run.summary["pct_50/test"]
+                    run_dict["pct_50_total_val"] = run.summary["pct_50/val"]
+                    run_dict["pct_75_total_test"] = run.summary["pct_75/test"]
+                    run_dict["pct_75_total_val"] = run.summary["pct_75/val"]
+                    run_dict["pct_95_total_test"] = run.summary["pct_95/test"]
+                    run_dict["pct_95_total_val"] = run.summary["pct_95/val"]
+                    run_dict["pct_99_total_test"] = run.summary["pct_99/test"]
+                    run_dict["pct_99_total_val"] = run.summary["pct_99/val"]
+                    
+                    if split in ["test","val"]:
+                        run_dict["pct_50"] = run.summary[f"pct_50_per_timestep/{split}/{i}"]
+                        run_dict["pct_75"] = run.summary[f"pct_75_per_timestep/{split}/{i}"]
+                        run_dict["pct_95"] = run.summary[f"pct_95_per_timestep/{split}/{i}"]
+                        run_dict["pct_99"] = run.summary[f"pct_99_per_timestep/{split}/{i}"]
+                    
+                    if "pointwise/cvar/0.01" not in run.summary:
+                        run_dict["pointwise/cvar/001"] = np.nan
+                        run_dict["pointwise/cvar/005"] = np.nan
+                        run_dict["pointwise/iqr"] = np.nan
+                        run_dict["pointwise/max"] = np.nan
+                        run_dict["pointwise/quantile/09"] = np.nan
+                        run_dict["pointwise/quantile/095"] = np.nan
+                        run_dict["pointwise/quantile/099"] = np.nan
+                        run_dict["pointwise/std"] = np.nan
+                    else:    
+                        run_dict["pointwise/cvar/001"] = run.summary[f"pointwise/cvar/0.01"]
+                        run_dict["pointwise/cvar/005"] = run.summary["pointwise/cvar/0.05"]
+                        run_dict["pointwise/iqr"] = run.summary["pointwise/iqr"]
+                        run_dict["pointwise/max"] = run.summary["pointwise/max"]
+                        run_dict["pointwise/quantile/09"] = run.summary["pointwise/quantile/0.9"]
+                        run_dict["pointwise/quantile/095"] = run.summary["pointwise/quantile/0.95"]
+                        run_dict["pointwise/quantile/099"] = run.summary["pointwise/quantile/0.99"]
+                        run_dict["pointwise/std"] = run.summary["pointwise/std"]
+                    
                     # To better plot constrained vs ERM
                     #TODO this is a hack while I consolidate the tags. 
                     run_dict["type"] = "ERM" if run.config['dual_lr'] == 0 else "Constrained"

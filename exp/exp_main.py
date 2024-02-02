@@ -306,7 +306,6 @@ class Exp_Main(Exp_Basic):
             train_losses = np.stack(train_losses)
             train_losses = np.average(train_losses, axis=0) #This is losses per step
 
-            # TODO (ihounie): add slacks to validation infeasibility computation, or remove them from train.
             if self.args.constraint_type == "monotonic":
                 train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
             else:
@@ -437,7 +436,6 @@ class Exp_Main(Exp_Basic):
         return
 
     def vali(self, vali_data, vali_loader, criterion):
-        "Javier: this returns overall mean loss, average losses per step, and overall average metrics."
         total_loss = []
         total_losses = []
         total_metrics=[]
@@ -480,7 +478,7 @@ class Exp_Main(Exp_Basic):
 
                 # Shape (batch_size, pred_len, out_dim). Average losses over out_dim.
                 all_losses_per_window_example=((pred-true)**2).mean(dim=(2))
-                # TODO (ihounie): add slacks to validation infeasibility computation, or remove them from train.
+                
                 vali_num_infeasibles = (loss > (constraint_levels)).sum()
                 if self.args.constraint_type == "monotonic":
                     vali_num_infeasibles = (loss[1:] > loss[:-1]).sum()

@@ -6,7 +6,7 @@ import os
 import wandb
 
 ###### SCRIPT PARAMETERS
-#WANDB_PROJECT="Autoformer-javierdev"
+
 WANDB_PROJECT="Autoformer"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"

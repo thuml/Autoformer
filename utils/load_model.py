@@ -28,5 +28,3 @@ def load_model(wandb_workspace,wandb_project,run_id):
     # Now load the weights. They are expected to be in "checkpoint.pth" in the run directory.
     model.load_state_dict(torch.load("best_model.pth"))
     return model
-
-
