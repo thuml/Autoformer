@@ -73,7 +73,14 @@
 
                 
 
-                //PatchTST specific param
+                //PatchTST specific params
+                "--fc_dropout","0.2",
+                "--c_out","321",
+                "--e_layers","3",
+                "--n_heads","16",
+                "--d_model","128",
+                "--d_ff","256",
+                "--dropout","0.2",
                 "--fc_dropout","0.2",
             ]
         }

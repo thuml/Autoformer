@@ -199,106 +199,106 @@ class Exp_Main(Exp_Basic):
                     slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
                     slacks = torch.clip(slacks, min=0.0)
                 #####End of the patchtst's else. 
-            if (i + 1) % 100 == 0:
-                print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
-                speed = (time.time() - time_now) / iter_count
-                left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
-                print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                iter_count = 0
-                time_now = time.time()
+                if (i + 1) % 100 == 0:
+                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
+                    speed = (time.time() - time_now) / iter_count
+                    left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
+                    print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+                    iter_count = 0
+                    time_now = time.time()
 
-                constrained_loss.backward()
-                model_optim.step()
-            
-                # New (PatchTST)
-                if self.args.lradj == 'TST':
-                    adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
-                    scheduler.step()
+                    constrained_loss.backward()
+                    model_optim.step()
+                
+                    # New (PatchTST)
+                    if self.args.lradj == 'TST':
+                        adjust_learning_rate(model_optim, scheduler, epoch + 1, self.args, printout=False)
+                        scheduler.step()
 
-                if (i + 1) % self.args.eval_steps == 0:
-                    #TODO address duplicates between this and end of epoch.
-                    # Calculating how many violate feasibility
-                    # TODO WARNING this will only work in the constant case.
-                    if self.args.constraint_type == "monotonic":
-                         train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
-                    else:
-                        train_num_infeasibles = (detached_raw_loss > (constraint_levels+slacks)).sum()
-                    train_infeasible_rate = train_num_infeasibles / self.args.pred_len
+                    if (i + 1) % self.args.eval_steps == 0:
+                        #TODO address duplicates between this and end of epoch.
+                        # Calculating how many violate feasibility
+                        # TODO WARNING this will only work in the constant case.
+                        if self.args.constraint_type == "monotonic":
+                            train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
+                        else:
+                            train_num_infeasibles = (detached_raw_loss > (constraint_levels+slacks)).sum()
+                        train_infeasible_rate = train_num_infeasibles / self.args.pred_len
 
-                    print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
+                        print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
 
-                    #Run validation set
-                    vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate, val_loss_distr_metrics, val_loss_distr_metrics_per_timestep = self.vali(vali_data, vali_loader, criterion)
-                    
-                    # Append /val to the val_loss_distr_metrics
-                    val_loss_distr_metrics = self._rename_dict(val_loss_distr_metrics, "val")
-                    val_loss_distr_metrics_per_timestep = self._rename_dict(val_loss_distr_metrics_per_timestep, "val")
+                        #Run validation set
+                        vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate, val_loss_distr_metrics, val_loss_distr_metrics_per_timestep = self.vali(vali_data, vali_loader, criterion)
+                        
+                        # Append /val to the val_loss_distr_metrics
+                        val_loss_distr_metrics = self._rename_dict(val_loss_distr_metrics, "val")
+                        val_loss_distr_metrics_per_timestep = self._rename_dict(val_loss_distr_metrics_per_timestep, "val")
 
-                    test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate, test_loss_distr_metrics, test_loss_distr_metrics_per_timestep = self.vali(test_data, test_loader, criterion)
-                    # Append /test to the test_loss_distr_metrics
-                    test_loss_distr_metrics = self._rename_dict(test_loss_distr_metrics, "test")
-                    test_loss_distr_metrics_per_timestep = self._rename_dict(test_loss_distr_metrics_per_timestep, "test")
+                        test_loss, test_losses, test_metrics, test_infeasibilities, test_avg_infeasiblity_rate, test_loss_distr_metrics, test_loss_distr_metrics_per_timestep = self.vali(test_data, test_loader, criterion)
+                        # Append /test to the test_loss_distr_metrics
+                        test_loss_distr_metrics = self._rename_dict(test_loss_distr_metrics, "test")
+                        test_loss_distr_metrics_per_timestep = self._rename_dict(test_loss_distr_metrics_per_timestep, "test")
 
-                    val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
-                    test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
-                    
-                    steps = torch.arange(self.args.pred_len).detach().cpu().numpy()
+                        val_mae, _, val_rmse, val_mape, val_mspe = val_metrics
+                        test_mae, _, test_rmse, test_mape, test_mspe = test_metrics
+                        
+                        steps = torch.arange(self.args.pred_len).detach().cpu().numpy()
 
-                    train_linearity = pearsonr(steps,detached_raw_loss.cpu().numpy())[0]
-                    vali_linearity = pearsonr(steps,vali_losses)[0]
-                    test_linearity = pearsonr(steps,test_losses)[0]
+                        train_linearity = pearsonr(steps,detached_raw_loss.cpu().numpy())[0]
+                        vali_linearity = pearsonr(steps,vali_losses)[0]
+                        test_linearity = pearsonr(steps,test_losses)[0]
 
-                    avg_train_loss = np.average(train_loss)
-                    
-                    # Intra epoch logging
+                        avg_train_loss = np.average(train_loss)
+                        
+                        # Intra epoch logging
+                        wandb.log(
+                            {   
+                                # train
+                                "mse/train": avg_train_loss,
+                                "linearity/train": train_linearity,
+                                "mse/val": vali_loss,
+                                "mse/test": test_loss,
+                                
+                                # val metrics
+                                "mae/val": val_mae,
+                                "rmse/val": val_rmse,
+                                "mape/val": val_mape,
+                                "mspe/val": val_mspe,
+                                "linearity/val": vali_linearity,
+
+                                # test metrics
+                                "mae/test": test_mae,
+                                "rmse/test": test_rmse,
+                                "mape/test": test_mape,
+                                "mspe/test": test_mspe,
+                                "linearity/test": test_linearity,
+
+                                # infeasibles
+                                "infeasibles/train": train_num_infeasibles, 
+                                "infeasible_rate/train": train_infeasible_rate, 
+                                "infeasibles/val": val_infeasibilities,
+                                "infeasible_rate/val": val_avg_infeasiblity_rate,
+                                "infeasibles/test": test_infeasibilities,
+                                "infeasible_rate/test": test_avg_infeasiblity_rate,
+                                "epoch":epoch+1,
+
+                                # loss distribution metrics
+                                **val_loss_distr_metrics,
+                                **test_loss_distr_metrics,
+                            },
+                            commit=False
+                        )
+                    # End of batch logging
                     wandb.log(
-                        {   
-                            # train
-                            "mse/train": avg_train_loss,
-                            "linearity/train": train_linearity,
-                            "mse/val": vali_loss,
-                            "mse/test": test_loss,
-                            
-                            # val metrics
-                            "mae/val": val_mae,
-                            "rmse/val": val_rmse,
-                            "mape/val": val_mape,
-                            "mspe/val": val_mspe,
-                            "linearity/val": vali_linearity,
-
-                            # test metrics
-                            "mae/test": test_mae,
-                            "rmse/test": test_rmse,
-                            "mape/test": test_mape,
-                            "mspe/test": test_mspe,
-                            "linearity/test": test_linearity,
-
-                            # infeasibles
-                            "infeasibles/train": train_num_infeasibles, 
-                            "infeasible_rate/train": train_infeasible_rate, 
-                            "infeasibles/val": val_infeasibilities,
-                            "infeasible_rate/val": val_avg_infeasiblity_rate,
-                            "infeasibles/test": test_infeasibilities,
-                            "infeasible_rate/test": test_avg_infeasiblity_rate,
-                            "epoch":epoch+1,
-
-                            # loss distribution metrics
-                            **val_loss_distr_metrics,
-                            **test_loss_distr_metrics,
-                        },
-                        commit=False
-                    )
-                # End of batch logging
-                wandb.log(
-                        {   
-                            "loss": constrained_loss.detach().cpu().item(),
-                            "mae/train": train_mae,
-                            "mse/train": train_mse,
-                            "rmse/train": train_mse,
-                            "mape/train": train_mape,
-                            "mspe/train": train_mspe,
-                        }
-                )   
+                            {   
+                                "loss": constrained_loss.detach().cpu().item(),
+                                "mae/train": train_mae,
+                                "mse/train": train_mse,
+                                "rmse/train": train_mse,
+                                "mape/train": train_mape,
+                                "mspe/train": train_mspe,
+                            }
+                    )   
             ## =======END EPOCH LOOP
 
             print("Epoch: {} cost time: {}".format(epoch + 1, time.time() - epoch_time))
