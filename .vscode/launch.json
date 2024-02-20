@@ -21,8 +21,9 @@
                 //Accelerator Actually for MPS just leave blank
                 // "--use-gpu",
                 // "",
-                "--model","Autoformer",
+                //"--model","Autoformer",
                 //"--model","Informer",
+                "--model","PatchTST",
                 
                 "--is_training","1",
                 //Data paths
@@ -51,7 +52,7 @@
                 "--train_epochs","10",
                 "--itr","1",
                 //Constraint parameters
-                // "--constraint_type","erm",
+                "--constraint_type","erm",
                 // "--dual_init", "1.0",
                 // "--dual_lr","0", 
                 // "--constraint_level", "-1",
@@ -73,7 +74,7 @@
                 
 
                 //PatchTST specific param
-                // "--fc_dropout","0.2",
+                "--fc_dropout","0.2",
             ]
         }
         ,{   
