@@ -153,59 +153,59 @@ class Exp_Main(Exp_Basic):
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark, batch_y)
                     
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
-                    raw_loss = criterion(outputs, batch_y)
-                    detached_raw_loss = raw_loss.detach()
+                f_dim = -1 if self.args.features == 'MS' else 0
+                outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                raw_loss = criterion(outputs, batch_y)
+                detached_raw_loss = raw_loss.detach()
 
-                    # Calculate other metrics for logging (detach and convert to numpy)
-                    train_mae, train_mse, train_rmse, train_mape, train_mspe = metric(
-                        pred=outputs.detach().cpu().numpy(), 
-                        true=batch_y.detach().cpu().numpy()
-                    )
+                # Calculate other metrics for logging (detach and convert to numpy)
+                train_mae, train_mse, train_rmse, train_mape, train_mspe = metric(
+                    pred=outputs.detach().cpu().numpy(), 
+                    true=batch_y.detach().cpu().numpy()
+                )
 
-                    train_losses.append(raw_loss.cpu().detach())
-                    train_loss.append(raw_loss.mean().item())
+                train_losses.append(raw_loss.cpu().detach())
+                train_loss.append(raw_loss.mean().item())
 
-                    # Constraint optimization
-                    if self.args.constraint_type == "erm":
-                        constrained_loss = raw_loss.mean()
-                    elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type =="resilience":
-                        if not self.args.sampling:
-                            constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
-                        else:
-                            probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
-                            sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
-                            constrained_loss = raw_loss[sampled_indexes].mean()
-                        #TODO uncomment for dual restarts
-                        #multipliers = multipliers * (raw_loss > constraint_levels).float()
-                        multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
-                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                    elif self.args.constraint_type == "monotonic":
-                        constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
-                        constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
-                        constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
-                        
-                        multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels[1:]+slacks))
-                        multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
-                    elif self.args.constraint_type == "dynamic_linear":
-                        raise NotImplementedError("dynamic_linear constraint not implemented yet.")
+                # Constraint optimization
+                if self.args.constraint_type == "erm":
+                    constrained_loss = raw_loss.mean()
+                elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type =="resilience":
+                    if not self.args.sampling:
+                        constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
                     else:
-                        raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
+                        probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
+                        sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
+                        constrained_loss = raw_loss[sampled_indexes].mean()
+                    #TODO uncomment for dual restarts
+                    #multipliers = multipliers * (raw_loss > constraint_levels).float()
+                    multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
+                    multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                elif self.args.constraint_type == "monotonic":
+                    constrained_loss = ((multipliers[:-1] + multipliers[1:] - 1/self.args.pred_len) * raw_loss[1:-1]).sum()
+                    constrained_loss += (1/self.args.pred_len+multipliers[0]) * raw_loss[0] 
+                    constrained_loss += (1/self.args.pred_len-multipliers[-1]) * raw_loss[-1] 
                     
-                    #If resilience activated
-                    if self.args.resilient_lr > 0:
-                        slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
-                        slacks = torch.clip(slacks, min=0.0)
-                    #####End of the patchtst's else. 
-                if (i + 1) % 100 == 0:
-                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
-                    speed = (time.time() - time_now) / iter_count
-                    left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
-                    print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
-                    iter_count = 0
-                    time_now = time.time()
+                    multipliers += self.args.dual_lr * (detached_raw_loss[:-1]-detached_raw_loss[1:]-(constraint_levels[1:]+slacks))
+                    multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
+                elif self.args.constraint_type == "dynamic_linear":
+                    raise NotImplementedError("dynamic_linear constraint not implemented yet.")
+                else:
+                    raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
+                
+                #If resilience activated
+                if self.args.resilient_lr > 0:
+                    slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
+                    slacks = torch.clip(slacks, min=0.0)
+                #####End of the patchtst's else. 
+            if (i + 1) % 100 == 0:
+                print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
+                speed = (time.time() - time_now) / iter_count
+                left_time = speed * ((self.args.train_epochs - epoch) * train_steps - i)
+                print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
+                iter_count = 0
+                time_now = time.time()
 
                 constrained_loss.backward()
                 model_optim.step()
