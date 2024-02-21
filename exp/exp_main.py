@@ -111,7 +111,9 @@ class Exp_Main(Exp_Basic):
 
         # TODO: PatchTST uses this. Do we want it?
         scheduler = None 
-        if False:
+        #if self.args.lradj == 'TST':
+        if self.args.model == "PatchTST":
+            print("Creating PatchTST scheduler object")
             scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
                                             steps_per_epoch = train_steps,
                                             pct_start = self.args.pct_start,

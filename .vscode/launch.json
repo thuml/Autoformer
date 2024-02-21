@@ -8,7 +8,7 @@
             "name": "Run Electricity",
             "type": "python",
             "request": "launch",
-            "program": "run.py",
+            "program": "run.py",    
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
@@ -49,7 +49,9 @@
                 // "--dec_in","8",
                 // "--c_out","8",
                 //Parameters that matter
-                "--train_epochs","10",
+                //"--train_epochs","10",
+                "--train_epochs","100", //PatchTST
+                "--patience","10",//PatchTST
                 "--itr","1",
                 //Constraint parameters
                 "--constraint_type","erm",
@@ -75,13 +77,14 @@
 
                 //PatchTST specific params
                 "--fc_dropout","0.2",
-                "--c_out","321",
+                //"--c_out","321",
                 "--e_layers","3",
                 "--n_heads","16",
                 "--d_model","128",
                 "--d_ff","256",
                 "--dropout","0.2",
                 "--fc_dropout","0.2",
+                "--lradj","type1",
             ]
         }
         ,{   
