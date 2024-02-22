@@ -1,3 +1,4 @@
+//launch.json For the NEW february branch
 {
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
@@ -50,14 +51,14 @@
                 // "--c_out","8",
                 //Parameters that matter
                 //"--train_epochs","10",
-                "--train_epochs","100", //PatchTST
+                "--train_epochs","10", //PatchTST
                 "--patience","10",//PatchTST
                 "--itr","1",
                 //Constraint parameters
                 "--constraint_type","erm",
                 // "--dual_init", "1.0",
                 // "--dual_lr","0", 
-                // "--constraint_level", "-1",
+                "--constraint_level", "-1",
 
                 //Constraint parameters constant
                 // "--constraint_type","constant",
@@ -66,14 +67,13 @@
                 // "--constraint_level","0.169",
 
                 //Constraint parameters static_linear
-                "--constraint_type","erm",
+                // "--constraint_type","erm",
                 // "--constraint_type","static_linear",
-                "--dual_init", "0.1",
-                "--dual_lr","0.1", //ERM
+                "--dual_init", "0.0",
+                "--dual_lr","0.0", //ERM
                 // "--constraint_slope","0.005",
                 // "--constraint_offs   et","0.169",
 
-                
 
                 //PatchTST specific params
                 "--fc_dropout","0.2",

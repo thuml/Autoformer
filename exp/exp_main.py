@@ -71,7 +71,8 @@ class Exp_Main(Exp_Basic):
         elif self.args.constraint_type == "erm" or self.args.constraint_type == "monotonic":
             constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
         else: 
-            raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
+            #raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
+            print(f"WARNING RUNNING WITH UNSUPPORTED CONSTRAINT TYPE {self.args.constraint_type}!!!!")
         #TODO add monotonic constraint levels. 
         #return constraint_levels
         return constraint_levels.detach() #Don't really need gradients for it
@@ -200,7 +201,10 @@ class Exp_Main(Exp_Basic):
                 if self.args.resilient_lr > 0:
                     slacks += self.args.resilient_lr * (-self.args.resilient_cost_alpha * slacks + multipliers)
                     slacks = torch.clip(slacks, min=0.0)
-                #####End of the patchtst's else. 
+                constrained_loss.backward()
+                model_optim.step()
+                
+                #Logging: print every 100 iterations
                 if (i + 1) % 100 == 0:
                     print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, constrained_loss.item()))
                     speed = (time.time() - time_now) / iter_count
@@ -208,9 +212,6 @@ class Exp_Main(Exp_Basic):
                     print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
                     iter_count = 0
                     time_now = time.time()
-
-                    constrained_loss.backward()
-                    model_optim.step()
                 
                     # New (PatchTST)
                     if self.args.lradj == 'TST':
