@@ -32,7 +32,7 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
     run_counter = 0
     for run in tqdm(runs):
         if "pointwise/cvar/0.01" not in run.summary:
-            print(f"WARNING!! Missing pointwise/cvar/0.01 in run {run.id} on sweep {run.sweep.name}. Filling all poitwisewith NAN.")
+            print(f"WARNING!! Missing pointwise/cvar/0.01 in run {run.id} on sweep {run.sweep}. Filling all poitwisewith NAN.")
         run_counter += 1
         for split in ["train", "test","val"]:
             for metric in ["mse"]:

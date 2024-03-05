@@ -110,10 +110,8 @@ class Exp_Main(Exp_Basic):
         model_optim = self._select_optimizer()
         criterion = self._select_criterion()
 
-        # TODO: PatchTST uses this. Do we want it?
         scheduler = None 
-        #if self.args.lradj == 'TST':
-        if self.args.model == "PatchTST":
+        if self.args.lradj =='TST':
             print("Creating PatchTST scheduler object")
             scheduler = lr_scheduler.OneCycleLR(optimizer = model_optim,
                                             steps_per_epoch = train_steps,
