@@ -1,7 +1,7 @@
 
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
-from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST
+from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST,Koopa
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
@@ -41,14 +41,31 @@ class Exp_Main(Exp_Basic):
             'Linear': Linear,
             'DLinear': DLinear,
             'PatchTST': PatchTST,
+            'Koopa': Koopa,
     }
+    
+    def _get_mask_spectrum(self):
+        """
+        get shared frequency spectrums
+        """
+        train_data, train_loader = self._get_data(flag='train')
+        amps = 0.0
+        for data in train_loader:
+            lookback_window = data[0]
+            amps += abs(torch.fft.rfft(lookback_window, dim=1)).mean(dim=0).mean(dim=1)
+
+        mask_spectrum = amps.topk(int(amps.shape[0]*self.args.alpha)).indices
+        return mask_spectrum # as the spectrums of time-invariant component
 
     def _build_model(self):
         model_dict = self.MODEL_DICT
+        if self.args.model == 'Koopa':
+            self.args.mask_spectrum = self._get_mask_spectrum()
         model = model_dict[self.args.model].Model(self.args).float()
 
         if self.args.use_multi_gpu and self.args.use_gpu:
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
+        
         return model
 
     def _get_data(self, flag):

@@ -8,21 +8,23 @@ import wandb
 ###### SCRIPT PARAMETERS
 
 WANDB_PROJECT="Autoformer"
+# WANDB_PROJECT="Autoformer-javierdev"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-SWEEP_NAME_PREFIX="Finaljan_StaticLinear_Resilience"
-EXPERIMENT_TAG="e21_icml_static_linear_resilience"
-EXPERIMENT_DESCRIPTION='Static Linear resilience'
+SWEEP_NAME_PREFIX="Finaljan_ERM_Koopa"
+EXPERIMENT_TAG="e22_icml_koopa_erm"
+EXPERIMENT_DESCRIPTION='ERM Koopa'
 
 # Constraint parameters
 # Constant
 #CONSTRAINT_TYPE='resilience'
 #CONSTRAINT_TYPE='constant'
 #CONSTRAINT_TYPE='monotonic'
-CONSTRAINT_TYPE='static_linear'
+#CONSTRAINT_TYPE='static_linear'
+CONSTRAINT_TYPE='erm'
 DUAL_LR=0.01
 DUAL_INIT=1.0
 
@@ -32,7 +34,11 @@ RESILIENT_LR=0.1
 #RESILIENT_LR=0.0
 
 #PROD PARAMETERS
-MODELS = ["Autoformer","Reformer","Informer","Transformer"]
+#MODELS = ["Autoformer","Reformer","Informer","Transformer"]
+#MODELS = ["PatchTST"]
+MODELS = ["Koopa"]
+if len(MODELS)>1 and "PatchTST" in MODELS:
+    raise ValueError("PatchtTST Must be run separately because of its unique parameters")
 DATASETS=["weather.csv","electricity.csv","exchange_rate.csv"]
 PRED_LENGTHS = [96,192,336,720]
 NUM_SEEDS=1
@@ -423,12 +429,41 @@ DOCUMENTATION_PARAMS = {
   'des': {'value': EXPERIMENT_DESCRIPTION}, 
 }
 
+if MODELS == ["PatchTST"]:
+    print("Running a PatchTST set of runs")
+    PATCH_TST_PARAMS = {
+        "fc_dropout": 0.2,
+        "e_layers": 3, #Will overwrite the one in the template
+        "n_heads": 16,
+        "d_model": 128,
+        "d_ff": 256,
+        "dropout": 0.2,
+        "fc_dropout": 0.2,
+        "lradj": "TST" 
+    }
+else: 
+    PATCH_TST_PARAMS = {}
+
+if MODELS == ["Koopa"]:
+    print("Running a Koopa set of runs")
+    KOOPA_PARAMS = {
+        "dynamic_dim": {"value": 256},
+        "hidden_dim": {"value": 512},
+        "hidden_layers": {"value": 3},
+        "seg_len": {"value": 48},
+        "num_blocks": {"value": 3},
+        "alpha": {"value": 0.2},
+        "multistep": {"value": 'True'}
+    }
+else:
+    KOOPA_PARAMS = {}
+
 TEMPLATE={
     **SWEEP_HEADER,
     "parameters": {
         **DOCUMENTATION_PARAMS,
         #**DATASET_DEPENDENT, #will be added later
-        "model":MODEL_DICT,
+        "model": MODEL_DICT,
         'pred_len': {'value': 0}, #also should fail if not set earlier
         **CONSTRAINT_PARAMS,
         #Other params that don't change much
@@ -440,75 +475,77 @@ TEMPLATE={
         'd_layers': {'value': 1},
         'factor': {'value': 3},
         'itr': {'value': 1},
-        'seed': {'value': SEED}
+        'seed': {'value': SEED},
+        **PATCH_TST_PARAMS,
+        **KOOPA_PARAMS
     }
 }
 
 # Generating epsilon constraint sweeps
 # By definition, must run one at a time because the gridsearch is along constraint levels.
 # CONSRTTRAINED
-print("Starting sweep generation")
-sweep_commands = []
-for num_seed in range(1,NUM_SEEDS+1):
-  for data_path in DATASETS:
-    for model in MODELS:
-        for pred_len in PRED_LENGTHS:
-              sweep_config = TEMPLATE.copy()
-              #data_path replace .csv with '', for names.
-              data_path_nodot=data_path.replace('.csv','')
+# print("Starting sweep generation")
+# sweep_commands = []
+# for num_seed in range(1,NUM_SEEDS+1):
+#   for data_path in DATASETS:
+#     for model in MODELS:
+#         for pred_len in PRED_LENGTHS:
+#               sweep_config = TEMPLATE.copy()
+#               #data_path replace .csv with '', for names.
+#               data_path_nodot=data_path.replace('.csv','')
 
-              sweep_config['name'] = f"{SWEEP_NAME_PREFIX}_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}"
-              sweep_config['parameters']['des'] = {'value': f"{EXPERIMENT_DESCRIPTION} {data_path} {model} {pred_len} seed{num_seed}."}
-              sweep_config['parameters']['wandb_run'] = {'value': f"{data_path_nodot}/Constrained/{model}/{pred_len}-10e"}
-              sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
-              sweep_config["parameters"]["model"] = {"value": model}
-              sweep_config["parameters"]["pred_len"] = {"value": pred_len}
+#               sweep_config['name'] = f"{SWEEP_NAME_PREFIX}_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}"
+#               sweep_config['parameters']['des'] = {'value': f"{EXPERIMENT_DESCRIPTION} {data_path} {model} {pred_len} seed{num_seed}."}
+#               sweep_config['parameters']['wandb_run'] = {'value': f"{data_path_nodot}/Constrained/{model}/{pred_len}-10e"}
+#               sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
+#               sweep_config["parameters"]["model"] = {"value": model}
+#               sweep_config["parameters"]["pred_len"] = {"value": pred_len}
               
-              constraint_type_name = CONSTRAINT_PARAMS['constraint_type']['value']
-              sweep_config["parameters"]["model_id"] = {"value": f"{model}_{data_path_nodot}_{pred_len}_{constraint_type_name}"}
+#               constraint_type_name = CONSTRAINT_PARAMS['constraint_type']['value']
+#               sweep_config["parameters"]["model_id"] = {"value": f"{model}_{data_path_nodot}_{pred_len}_{constraint_type_name}"}
 
-              # Add the constraint levels
-              sweep_config["parameters"].update(CONSTRAINT_PARAMS)
+#               # Add the constraint levels
+#               sweep_config["parameters"].update(CONSTRAINT_PARAMS)
               
-              if CONSTRAINT_TYPE=='static_linear':
-                #print("Adding static linear constraint levels")
-                sweep_config["parameters"]["constraint_slope"] = {"value": CONSTRAINT_LINES[data_path][model][pred_len]['constraint_slope']}
-                sweep_config["parameters"]["constraint_offset"] = {"value": CONSTRAINT_LINES[data_path][model][pred_len]['constraint_offset']}
-                sweep_config["parameters"].pop("constraint_level")
-              #TODO refactor this to support both linear and monotonic. I'm too tired
-              # if CONSTRAINT_TYPE=='monotonic': # constraint_level-less
-              #   sweep_config["parameters"].pop("constraint_level")
-              # else:
-              #   if len(CONSTRAINT_DATA[data_path][model][pred_len]) == 1:
-              #     sweep_config["parameters"]["constraint_level"] = {"value": CONSTRAINT_DATA[data_path][model][pred_len][0]}  
-              #   elif len(CONSTRAINT_DATA[data_path][model][pred_len]) > 1: 
-              #     sweep_config["parameters"]["constraint_level"] = {"values": CONSTRAINT_DATA[data_path][model][pred_len]}
-              #   else:
-              #     raise ValueError("No constraint levels found for this model, dataset, and pred_len")
-              # Update description, including params & seed number
-              #print(sweep_config)
-              sweep_id = wandb.sweep(sweep_config)
-              sweep_commands.append(sweep_id)
-              # Write YAML file for debugging, with overwrite
-              YAML_FILENAME=f"sweep_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}.yaml"
-              #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
-              with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
-                  yaml.dump(sweep_config,f,sort_keys=False)
-print("Run the following commands: \n\n")
-#print(sweep_commands)
-from functools import reduce
-# result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
-# print(result)
-# print ("\n Done")
-agents_array = reduce(lambda x, y: f"{x} {y}", sweep_commands)
-sweep_command=f"""
-agents=({agents_array})
-for agent in "${{agents[@]}}"
-do
-  wandb agent "{NAMESPACE}/{WANDB_PROJECT}/$agent"
-done
-"""
-print(sweep_command)
+#               if CONSTRAINT_TYPE=='static_linear':
+#                 #print("Adding static linear constraint levels")
+#                 sweep_config["parameters"]["constraint_slope"] = {"value": CONSTRAINT_LINES[data_path][model][pred_len]['constraint_slope']}
+#                 sweep_config["parameters"]["constraint_offset"] = {"value": CONSTRAINT_LINES[data_path][model][pred_len]['constraint_offset']}
+#                 sweep_config["parameters"].pop("constraint_level")
+#               #TODO refactor this to support both linear and monotonic. I'm too tired
+#               # if CONSTRAINT_TYPE=='monotonic': # constraint_level-less
+#               #   sweep_config["parameters"].pop("constraint_level")
+#               # else:
+#               #   if len(CONSTRAINT_DATA[data_path][model][pred_len]) == 1:
+#               #     sweep_config["parameters"]["constraint_level"] = {"value": CONSTRAINT_DATA[data_path][model][pred_len][0]}  
+#               #   elif len(CONSTRAINT_DATA[data_path][model][pred_len]) > 1: 
+#               #     sweep_config["parameters"]["constraint_level"] = {"values": CONSTRAINT_DATA[data_path][model][pred_len]}
+#               #   else:
+#               #     raise ValueError("No constraint levels found for this model, dataset, and pred_len")
+#               # Update description, including params & seed number
+#               #print(sweep_config)
+#               sweep_id = wandb.sweep(sweep_config)
+#               sweep_commands.append(sweep_id)
+#               # Write YAML file for debugging, with overwrite
+#               YAML_FILENAME=f"sweep_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}.yaml"
+#               #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
+#               with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
+#                   yaml.dump(sweep_config,f,sort_keys=False)
+# print("Run the following commands: \n\n")
+# #print(sweep_commands)
+# from functools import reduce
+# # result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
+# # print(result)
+# # print ("\n Done")
+# agents_array = reduce(lambda x, y: f"{x} {y}", sweep_commands)
+# sweep_command=f"""
+# agents=({agents_array})
+# for agent in "${{agents[@]}}"
+# do
+#   wandb agent "{NAMESPACE}/{WANDB_PROJECT}/$agent"
+# done
+# """
+# print(sweep_command)
 
 #########
 
@@ -520,46 +557,46 @@ print(sweep_command)
 ###FOR ERM
 #TODO maybe split into separate files or funcs. 
 # Generating ERM sweeps
-# print("Starting sweep generation")
-# print("ERM Sweeps, setting constraints to zero")
-# CONSTRAINT_PARAMS={
-#   'constraint_level': {'value': -1.0},
-#   'constraint_type': {'value': 'erm'},
-#   'dual_init': {'value': 0.0},
-#   'dual_lr': {'value': 0.0},
-# }
+print("Starting sweep generation")
+print("ERM Sweeps, setting constraints to zero")
+CONSTRAINT_PARAMS={
+  'constraint_level': {'value': -1.0},
+  'constraint_type': {'value': 'erm'},
+  'dual_init': {'value': 0.0},
+  'dual_lr': {'value': 0.0},
+}
 
-# sweep_commands = []
-# for num_seed in range(1,NUM_SEEDS+1):
-#   for data_path in DATASETS:
-#     sweep_config = TEMPLATE.copy()
-#     sweep_config['name'] = f"{SWEEP_NAME_PREFIX}_{data_path}_seed{SEED}"
-#     sweep_config['parameters']['des'] = {'value': f"{EXPERIMENT_DESCRIPTION} ERM epsilon run {data_path} seed{SEED}."}
-#     sweep_config['parameters']['wandb_run'] = {'value': f"AllModels_{data_path}/ERM"}
-#     sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
-#     sweep_config["parameters"]["model"] = {"values": MODELS}
-#     sweep_config["parameters"]["pred_len"] = {"values": PRED_LENGTHS}
-#     #data_path replace .csv with ''
-#     sweep_config["parameters"]["model_id"] = {"value": f"{data_path.replace('.csv','')}_erm"}
+sweep_commands = []
+for num_seed in range(1,NUM_SEEDS+1):
+  for data_path in DATASETS:
+    sweep_config = TEMPLATE.copy()
+    sweep_config['name'] = f"{SWEEP_NAME_PREFIX}_{data_path}_seed{SEED}"
+    sweep_config['parameters']['des'] = {'value': f"{EXPERIMENT_DESCRIPTION} ERM epsilon run {data_path} seed{SEED}."}
+    sweep_config['parameters']['wandb_run'] = {'value': f"AllModels_{data_path}/ERM"}
+    sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
+    sweep_config["parameters"]["model"] = {"values": MODELS}
+    sweep_config["parameters"]["pred_len"] = {"values": PRED_LENGTHS}
+    #data_path replace .csv with ''
+    sweep_config["parameters"]["model_id"] = {"value": f"{data_path.replace('.csv','')}_erm"}
 
-#     # Add the placeholder constraint levels
-#     sweep_config["parameters"].update(CONSTRAINT_PARAMS)
-#     # drop constraint_levels
-#     #sweep_config["parameters"].pop("constraint_level")
-#     # Update description, including params & seed number
-#     #print(sweep_config)
+    # Add the placeholder constraint levels
+    sweep_config["parameters"].update(CONSTRAINT_PARAMS)
+    # drop constraint_levels
+    #sweep_config["parameters"].pop("constraint_level")
+    # Update description, including params & seed number
+    #print(sweep_config)
     
-#     sweep_id = wandb.sweep(sweep_config)
-#     sweep_commands.append(f"wandb agent {NAMESPACE}/{WANDB_PROJECT}/{sweep_id}")
-#     # Write YAML file for debugging, with overwrite
-#     YAML_FILENAME=f"sweep_erm_{data_path}_all_models_seed{SEED}.yaml"
-#     #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
-#     with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
-#         yaml.dump(sweep_config,f,sort_keys=False)
-# from functools import reduce
-# result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
-# print(result)
-# print ("\n Done")
+    sweep_id = wandb.sweep(sweep_config)
+    sweep_commands.append(f"wandb agent {NAMESPACE}/{WANDB_PROJECT}/{sweep_id}")
+    # Write YAML file for debugging, with overwrite
+    YAML_FILENAME=f"sweep_erm_{data_path}_all_models_seed{SEED}.yaml"
+    #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
+    with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
+        yaml.dump(sweep_config,f,sort_keys=False)
+from functools import reduce
+result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
+print(result)
+print ("\n Done")
 
 ###########################
 ###########################
