@@ -113,8 +113,22 @@ def main():
     parser.add_argument('--decomposition', type=int, default=0, help='decomposition; True 1 False 0')
     parser.add_argument('--kernel_size', type=int, default=25, help='decomposition-kernel')
     parser.add_argument('--individual', type=int, default=0, help='individual head; True 1 False 0')
+    
+    # Koopa
+    parser.add_argument('--dynamic_dim', type=int, default=128, help='latent dimension of koopman embedding')
+    parser.add_argument('--hidden_dim', type=int, default=64, help='hidden dimension of en/decoder')
+    parser.add_argument('--hidden_layers', type=int, default=2, help='number of hidden layers of en/decoder')
+    parser.add_argument('--seg_len', type=int, default=48, help='segment length of time series')
+    parser.add_argument('--num_blocks', type=int, default=3, help='number of Koopa blocks')
+    parser.add_argument('--alpha', type=float, default=0.2, help='spectrum filter ratio')
+    #parser.add_argument('--multistep', action='store_true', help='whether to use approximation for multistep K', default=False)
+    parser.add_argument('--multistep', type=bool, help='whether to use approximation for multistep K', default=False)
 
     args = parser.parse_args()
+    
+    print("GOT ARG")
+    print(args.multistep)
+    
 
     # Argument validation
     # if Constant, then constraint_level must be provided
@@ -158,7 +172,6 @@ def main():
     wandb.init(name=run_name, project=args.wandb_project, config=args,tags=[args.experiment_tag])
     # Real seed is the actual seed passed to the RNGs (The user might have passed seed=0 to autogenerate seeds)
     wandb.log({"real_seed":args.seed})
-
     Exp = Exp_Main
 
     if args.is_training:

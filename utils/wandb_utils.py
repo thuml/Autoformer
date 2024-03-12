@@ -70,7 +70,9 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
                         if "resilient_lr" in run.config and run.config['resilient_lr'] > 0:
                             run_dict["constraint_type"] = run_dict["constraint_type"] + "_resilience"
                     
-                    run_dict[f"linearity/{split}"] = run.summary[f"linearity/{split}"]
+                    
+                    if "linearity" in run.summary:
+                        run_dict[f"linearity/{split}"] = run.summary[f"linearity/{split}"]
                     run_dict["pct_50_total_test"] = run.summary["pct_50/test"]
                     run_dict["pct_50_total_val"] = run.summary["pct_50/val"]
                     run_dict["pct_75_total_test"] = run.summary["pct_75/test"]
@@ -133,6 +135,9 @@ def generate_constraint_levels(df,split='train'):
     
     """
     erm_df=df.query(f'constraint_type=="erm" and split=="{split}"').copy()
+    
+    if erm_df.empty:
+        raise ValueError("erm_df is empty. No constraint levels can be generated.")
 
     # Get only a single run per (data_path,model,pred_len) to compute results
     erm_df_run_ids = erm_df[['data_path','model','pred_len','run_id']].drop_duplicates(['data_path','model','pred_len']).run_id.tolist()

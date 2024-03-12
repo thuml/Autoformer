@@ -6,6 +6,83 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Electricity Koopa Debug",
+            "type": "python",
+            "request": "launch",
+            "program": "run.py",    
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--wandb_project", "Autoformer-javierdev",
+                //"--wandb_run", "dev-Refactoring",
+                "--wandb_run", "dev-koopa",
+                "--experiment_tag", "e0_exploration_runs",
+                //"--seed","2021", 
+                "--seed","2023", //Seed 2023 in koopa lol.
+                "--des","Exploration",
+                //Accelerator Actually for MPS just leave blank
+                // "--use-gpu",
+                // "",
+                //"--model","Autoformer",
+                //"--model","Informer",
+                "--model","Koopa",
+                
+                "--is_training","1",
+                //Data paths
+                "--root_path","./dataset/electricity/",
+                "--data_path","electricity.csv",
+                "--model_id","electricity",
+                "--data","custom",
+                "--features","M",
+                //Experiment Params
+                "--seq_len","96",
+                "--label_len","48",
+                //"--pred_len","192", //OThers
+                "--pred_len","48",  //Koopa
+                "--e_layers","2",
+                "--d_layers","1",
+                "--factor","3",
+                //Dataset specific
+                //Electricity
+                "--enc_in","321",
+                "--dec_in","321",
+                "--c_out","321",
+                //Exchange
+                // "--enc_in","8",
+                // "--dec_in","8",
+                // "--c_out","8",
+                "--train_epochs","20",
+                "--itr","1",
+                //Constraint parameters
+                // "--constraint_type","erm",
+                // "--dual_init", "1.0",
+                // "--dual_lr","0", 
+                // "--constraint_level", "-1",
+
+                //Constraint parameters constant
+                "--constraint_type","constant",
+                "--dual_init", "1.0",
+                "--dual_lr","0.01", 
+                "--constraint_level","0.14", //Eyeballed from mean mse val on patchtst.
+
+                //Constraint parameters static_linear
+                // "--constraint_type","erm",
+                // "--constraint_type","static_linear",
+                // "--dual_init", "0.0",
+                // "--dual_lr","0.0", //ERM
+                // "--constraint_slope","0.005",
+                // "--constraint_offset","0.169",
+                
+                "--dynamic_dim", "256", 
+                "--hidden_dim", "512", 
+                "--hidden_layers", "3", 
+                "--seg_len", "48", 
+                "--num_blocks", "3", 
+                "--alpha", "0.2", //Default
+                "--multistep",
+            ]
+        },
+        {
             "name": "Run Electricity",
             "type": "python",
             "request": "launch",
@@ -51,26 +128,26 @@
                 // "--c_out","8",
                 //Parameters that matter
                 //"--train_epochs","10",
-                "--train_epochs","10", //PatchTST
+                "--train_epochs","25", //PatchTST
                 "--patience","10",//PatchTST
                 "--itr","1",
                 //Constraint parameters
-                "--constraint_type","erm",
+                //"--constraint_type","erm",
                 // "--dual_init", "1.0",
                 // "--dual_lr","0", 
-                "--constraint_level", "-1",
+                //"--constraint_level", "-1",
 
                 //Constraint parameters constant
-                // "--constraint_type","constant",
-                // "--dual_init", "1.0",
-                // "--dual_lr","0.01", //ERM
-                // "--constraint_level","0.169",
+                "--constraint_type","constant",
+                "--dual_init", "1.0",
+                "--dual_lr","0.01", 
+                "--constraint_level","0.167", //Eyeballed from mean mse val on patchtst.
 
                 //Constraint parameters static_linear
                 // "--constraint_type","erm",
                 // "--constraint_type","static_linear",
-                "--dual_init", "0.0",
-                "--dual_lr","0.0", //ERM
+                // "--dual_init", "0.0",
+                // "--dual_lr","0.0", //ERM
                 // "--constraint_slope","0.005",
                 // "--constraint_offs   et","0.169",
 
