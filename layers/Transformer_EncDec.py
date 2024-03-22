@@ -36,10 +36,11 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == "relu" else F.gelu
 
-    def forward(self, x, attn_mask=None):
+    def forward(self, x, attn_mask=None, tau=None, delta=None):
         new_x, attn = self.attention(
             x, x, x,
-            attn_mask=attn_mask
+            attn_mask=attn_mask,
+            tau=tau, delta=delta
         )
         x = x + self.dropout(new_x)
 
@@ -57,19 +58,20 @@ class Encoder(nn.Module):
         self.conv_layers = nn.ModuleList(conv_layers) if conv_layers is not None else None
         self.norm = norm_layer
 
-    def forward(self, x, attn_mask=None):
+    def forward(self, x, attn_mask=None, tau=None, delta=None):
         # x [B, L, D]
         attns = []
         if self.conv_layers is not None:
-            for attn_layer, conv_layer in zip(self.attn_layers, self.conv_layers):
-                x, attn = attn_layer(x, attn_mask=attn_mask)
+            for i, (attn_layer, conv_layer) in enumerate(zip(self.attn_layers, self.conv_layers)):
+                delta = delta if i == 0 else None
+                x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
                 x = conv_layer(x)
                 attns.append(attn)
-            x, attn = self.attn_layers[-1](x)
+            x, attn = self.attn_layers[-1](x, tau=tau, delta=None)
             attns.append(attn)
         else:
             for attn_layer in self.attn_layers:
-                x, attn = attn_layer(x, attn_mask=attn_mask)
+                x, attn = attn_layer(x, attn_mask=attn_mask, tau=tau, delta=delta)
                 attns.append(attn)
 
         if self.norm is not None:
@@ -93,16 +95,18 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.activation = F.relu if activation == "relu" else F.gelu
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None):
+    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
         x = x + self.dropout(self.self_attention(
             x, x, x,
-            attn_mask=x_mask
+            attn_mask=x_mask,
+            tau=tau, delta=None
         )[0])
         x = self.norm1(x)
 
         x = x + self.dropout(self.cross_attention(
             x, cross, cross,
-            attn_mask=cross_mask
+            attn_mask=cross_mask,
+            tau=tau, delta=delta
         )[0])
 
         y = x = self.norm2(x)
@@ -119,9 +123,9 @@ class Decoder(nn.Module):
         self.norm = norm_layer
         self.projection = projection
 
-    def forward(self, x, cross, x_mask=None, cross_mask=None):
+    def forward(self, x, cross, x_mask=None, cross_mask=None, tau=None, delta=None):
         for layer in self.layers:
-            x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask)
+            x = layer(x, cross, x_mask=x_mask, cross_mask=cross_mask, tau=tau, delta=delta)
 
         if self.norm is not None:
             x = self.norm(x)
