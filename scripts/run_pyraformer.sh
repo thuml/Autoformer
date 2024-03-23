@@ -1,5 +1,5 @@
 model="Pyraformer"
 for folder in "ECL" "Exchange" "Traffic" "Weather"
 do
-    ./scripts/${folder}_script/${model}.sh 
+    CUDA_VISIBLE_DEVICES=1 ./scripts/${folder}_script/${model}.sh 
 done
