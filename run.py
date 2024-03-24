@@ -131,9 +131,6 @@ def main():
     parser.add_argument('--task_name', type=str, required=False, default='long_term_forecast',
                         help='for compatibility')
 
-    parser.add_argument('--task_name', type=str, required=False, default='long_term_forecast',
-                        help='for compatibility')
-
     args = parser.parse_args()
     
     print("GOT ARG")
