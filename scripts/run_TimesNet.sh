@@ -1,5 +1,5 @@
 model="TimesNet"
-for folder in "ECL" "Exchange" "Traffic" "Weather"
+for folder in "Traffic" "Weather"
 do
     CUDA_VISIBLE_DEVICES=1 ./scripts/${folder}_script/${model}.sh 
 done
