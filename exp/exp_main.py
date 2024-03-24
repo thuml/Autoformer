@@ -1,7 +1,7 @@
 
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
-from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST,Koopa,Pyraformer,FEDformer,Nonstationary_Transformer,TimesNet
+from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST,Koopa,Pyraformer,FEDformer,Nonstationary_Transformer,TimesNet, MICN, FiLM
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
@@ -45,8 +45,9 @@ class Exp_Main(Exp_Basic):
             'Pyraformer': Pyraformer,
             'FEDformer': FEDformer,
             'Nonstationary_Transformer': Nonstationary_Transformer,
-            'TimesNet': TimesNet
-
+            'TimesNet': TimesNet,
+            'MICN': MICN,
+            'FiLM': FiLM,
     }
     
     def _get_mask_spectrum(self):
