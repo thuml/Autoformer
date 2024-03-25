@@ -37,13 +37,13 @@ CONSTRAINT_TYPE='constant'
 RESILIENT_LR=0.0
 
 #PROD PARAMETERS
-MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
+MODELS = ["FiLM"]#["Autoformer","Reformer","Informer","Transformer"]
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
     raise ValueError("PatchtTST Must be run separately because of its unique parameters")
 DATASETS=[
-  "weather.csv","electricity.csv","exchange_rate.csv","traffic.csv"]
+  "electricity.csv","exchange_rate.csv"]#"weather.csv",
   #"ETTh1.csv","ETTh2.csv","ETTm1.csv","ETTm2.csv"]
 PRED_LENGTHS = [96,192,336,720]
 
@@ -110,22 +110,14 @@ DATASET_DEPENDENT={
 }
 
 #train
-CONSTRAINT_DATA={'electricity.csv': {'Pyraformer': {96: [0.194, 0.197, 0.2],
-   192: [0.208, 0.218, 0.234],
-   336: [0.225, 0.235, 0.257],
-   720: [0.245, 0.258, 0.277]}},
- 'exchange_rate.csv': {'Pyraformer': {96: [0.925, 1.075, 1.292],
-   192: [1.21, 1.476, 1.686],
-   336: [2.067, 2.233, 2.374],
-   720: [2.394, 3.794, 4.866]}},
- 'traffic.csv': {'Pyraformer': {96: [0.516, 0.532, 0.551],
-   192: [0.534, 0.541, 0.548],
-   336: [0.537, 0.558, 0.572],
-   720: [0.537, 0.558, 0.572]}},
- 'weather.csv': {'Pyraformer': {96: [0.412, 0.52, 0.535],
-   192: [0.532, 0.576, 0.621],
-   336: [0.581, 0.705, 0.762],
-   720: [0.691, 0.808, 0.926]}}}
+CONSTRAINT_DATA={'electricity.csv': {'FiLM': {96: [0.197, 0.242, 0.26],
+   192: [0.244, 0.259, 0.269],
+   336: [0.259, 0.275, 0.314],
+   720: [0.295, 0.369, 0.451]}},
+ 'exchange_rate.csv': {'FiLM': {96: [0.184, 0.254, 0.308],
+   192: [0.231, 0.36, 0.479],
+   336: [0.478, 0.701, 0.893],
+   720: [0.651, 1.116, 1.405]}}}
 
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
@@ -208,6 +200,9 @@ TEMPLATE={
         'factor': {'value': 3},
         'itr': {'value': 1},
         'seed': {'value': SEED},
+        'd_ff': {'value': 512},
+        'd_model': {'value': 256},
+        'top_k': {'value': 5},
         **PATCH_TST_PARAMS,
         **KOOPA_PARAMS
     }

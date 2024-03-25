@@ -37,7 +37,7 @@ CONSTRAINT_TYPE='constant'
 RESILIENT_LR=0.0
 
 #PROD PARAMETERS
-MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
+MODELS = ["MICN"]#["Autoformer","Reformer","Informer","Transformer"]
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
@@ -110,22 +110,22 @@ DATASET_DEPENDENT={
 }
 
 #train
-CONSTRAINT_DATA={'electricity.csv': {'Pyraformer': {96: [0.194, 0.197, 0.2],
-   192: [0.208, 0.218, 0.234],
-   336: [0.225, 0.235, 0.257],
-   720: [0.245, 0.258, 0.277]}},
- 'exchange_rate.csv': {'Pyraformer': {96: [0.925, 1.075, 1.292],
-   192: [1.21, 1.476, 1.686],
-   336: [2.067, 2.233, 2.374],
-   720: [2.394, 3.794, 4.866]}},
- 'traffic.csv': {'Pyraformer': {96: [0.516, 0.532, 0.551],
-   192: [0.534, 0.541, 0.548],
-   336: [0.537, 0.558, 0.572],
-   720: [0.537, 0.558, 0.572]}},
- 'weather.csv': {'Pyraformer': {96: [0.412, 0.52, 0.535],
-   192: [0.532, 0.576, 0.621],
-   336: [0.581, 0.705, 0.762],
-   720: [0.691, 0.808, 0.926]}}}
+CONSTRAINT_DATA={'electricity.csv': {'MICN': {96: [0.13, 0.144, 0.151],
+   192: [0.142, 0.149, 0.16],
+   336: [0.144, 0.154, 0.173],
+   720: [0.169, 0.184, 0.198]}},
+ 'exchange_rate.csv': {'MICN': {96: [0.108, 0.194, 0.293],
+   192: [0.233, 0.46, 0.648],
+   336: [0.658, 1.22, 1.849],
+   720: [1.218, 3.959, 4.842]}},
+ 'traffic.csv': {'MICN': {96: [0.41, 0.425, 0.432],
+   192: [0.407, 0.416, 0.426],
+   336: [0.407, 0.441, 0.463],
+   720: [0.4, 0.456, 0.536]}},
+ 'weather.csv': {'MICN': {96: [0.404, 0.482, 0.503],
+   192: [0.519, 0.528, 0.554],
+   336: [0.51, 0.558, 0.59],
+   720: [0.634, 0.701, 0.727]}}}
 
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
@@ -208,6 +208,9 @@ TEMPLATE={
         'factor': {'value': 3},
         'itr': {'value': 1},
         'seed': {'value': SEED},
+        'd_ff': {'value': 512},
+        'd_model': {'value': 256},
+        'top_k': {'value': 5},
         **PATCH_TST_PARAMS,
         **KOOPA_PARAMS
     }

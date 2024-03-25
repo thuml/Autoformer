@@ -37,13 +37,13 @@ CONSTRAINT_TYPE='constant'
 RESILIENT_LR=0.0
 
 #PROD PARAMETERS
-MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
+MODELS = ["Nonstationary_Transformer"]#["Autoformer","Reformer","Informer","Transformer"]
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
     raise ValueError("PatchtTST Must be run separately because of its unique parameters")
 DATASETS=[
-  "weather.csv","electricity.csv","exchange_rate.csv","traffic.csv"]
+  "electricity.csv","exchange_rate.csv","traffic.csv"]#"weather.csv",
   #"ETTh1.csv","ETTh2.csv","ETTm1.csv","ETTm2.csv"]
 PRED_LENGTHS = [96,192,336,720]
 
@@ -110,22 +110,18 @@ DATASET_DEPENDENT={
 }
 
 #train
-CONSTRAINT_DATA={'electricity.csv': {'Pyraformer': {96: [0.194, 0.197, 0.2],
-   192: [0.208, 0.218, 0.234],
-   336: [0.225, 0.235, 0.257],
-   720: [0.245, 0.258, 0.277]}},
- 'exchange_rate.csv': {'Pyraformer': {96: [0.925, 1.075, 1.292],
-   192: [1.21, 1.476, 1.686],
-   336: [2.067, 2.233, 2.374],
-   720: [2.394, 3.794, 4.866]}},
- 'traffic.csv': {'Pyraformer': {96: [0.516, 0.532, 0.551],
-   192: [0.534, 0.541, 0.548],
-   336: [0.537, 0.558, 0.572],
-   720: [0.537, 0.558, 0.572]}},
- 'weather.csv': {'Pyraformer': {96: [0.412, 0.52, 0.535],
-   192: [0.532, 0.576, 0.621],
-   336: [0.581, 0.705, 0.762],
-   720: [0.691, 0.808, 0.926]}}}
+CONSTRAINT_DATA={'electricity.csv': {'Nonstationary_Transformer': {96: [0.131, 0.143, 0.15],
+   192: [0.141, 0.156, 0.176],
+   336: [0.147, 0.174, 0.199],
+   720: [0.182, 0.227, 0.255]}},
+ 'exchange_rate.csv': {'Nonstationary_Transformer': {96: [0.11, 0.223, 0.337],
+   192: [0.213, 0.385, 0.52],
+   336: [0.273, 0.631, 1.01],
+   720: [1.817, 2.356, 4.053]}},
+ 'traffic.csv': {'Nonstationary_Transformer': {96: [0.472, 0.491, 0.494],
+   192: [0.444, 0.45, 0.459],
+   336: [0.434, 0.455, 0.473],
+   720: [0.417, 0.466, 0.536]}}}
 
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
@@ -208,6 +204,9 @@ TEMPLATE={
         'factor': {'value': 3},
         'itr': {'value': 1},
         'seed': {'value': SEED},
+        'd_ff': {'value': 512},
+        'd_model': {'value': 256},
+        'top_k': {'value': 5},
         **PATCH_TST_PARAMS,
         **KOOPA_PARAMS
     }
