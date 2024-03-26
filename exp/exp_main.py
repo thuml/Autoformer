@@ -123,6 +123,8 @@ class Exp_Main(Exp_Basic):
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
+            if len(os.path.basename(path))>50:
+                path = os.path.join(os.path.dirname(path), os.path.basename(path)[:50])
             os.makedirs(path)
 
         time_now = time.time()
