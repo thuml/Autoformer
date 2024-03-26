@@ -150,15 +150,15 @@ def generate_constraint_levels(df,split='train'):
     constraint_data=stats[['data_path','model','pred_len','25%','50%','75%','mean','std']].sort_values(['data_path','pred_len','model'])
     
     models = constraint_data.model.unique()
-    pred_lens = constraint_data.pred_len.unique()
     data_paths = constraint_data.data_path.unique()
     constraint_data_dict = {}
     for data_path in data_paths:
         constraint_data_dict[data_path]={}
         for model in models:
             constraint_data_dict[data_path][model]={}
+            pred_lens = constraint_data[(constraint_data.model==model) & (constraint_data.data_path==data_path)].pred_len.unique()
             for pred_len in pred_lens:                
-                constraint_data_dict[data_path][model][pred_len]=constraint_data[(constraint_data.model==model) & (constraint_data.pred_len==pred_len) & (constraint_data.data_path==data_path)][['25%','50%','75%']].values.tolist()[0]
+                constraint_data_dict[data_path][model][pred_len] = constraint_data[(constraint_data.model==model) & (constraint_data.pred_len==pred_len) & (constraint_data.data_path==data_path)][['25%','50%','75%']].values.tolist()[0]
                 # Round to 3 decimals
                 constraint_data_dict[data_path][model][pred_len] = [round(x,3) for x in constraint_data_dict[data_path][model][pred_len]]
     return constraint_data_dict
