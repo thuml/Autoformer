@@ -578,8 +578,8 @@ class Exp_Main(Exp_Basic):
 
         preds = []
         trues = []
-        if len(os.path.basename(path))>50:
-            folder_path = './test_results/' + setting[-50:] + '/'
+        if len(setting)>30:
+            folder_path = './test_results/' + setting[-30:] + '/'
         else:
             folder_path = './test_results/' + setting + '/'
         if not os.path.exists(folder_path):
