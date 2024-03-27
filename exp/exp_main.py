@@ -633,7 +633,10 @@ class Exp_Main(Exp_Basic):
         print('test shape:', preds.shape, trues.shape)
 
         # result save
-        folder_path = './results/' + setting + '/'
+        if len(setting)>30:
+            folder_path = './results/' + setting[-30:] + '/'
+        else:
+            folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
