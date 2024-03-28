@@ -1,6 +1,23 @@
 import torch
 import wandb
 
+
+# importing the module
+import json
+  
+# declaringa a class
+class obj:
+     
+    # constructor
+    def __init__(self, dict1):
+        self.__dict__.update(dict1)
+  
+def dict2obj(dict1):
+     
+    # using json.loads method and passing json.dumps
+    # method and custom object hook as arguments
+    return json.loads(json.dumps(dict1), object_hook=obj)
+
 class Dict2Obj(object):
     """
     Utility to turn wandb config dictionary into an object.
@@ -27,4 +44,4 @@ def load_model(wandb_workspace,wandb_project,run_id):
 
     # Now load the weights. They are expected to be in "checkpoint.pth" in the run directory.
     model.load_state_dict(torch.load("best_model.pth"))
-    return model
+    return model, dict2obj(config)
