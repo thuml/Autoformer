@@ -1,5 +1,4 @@
 import argparse
-import os
 import torch
 from exp.exp_main import Exp_Main
 import random
@@ -14,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser(description='Autoformer & Transformer family for Time Series Forecasting')
 
     # basic config
-    parser.add_argument('--seed', type=int, required=True, default=0, help='randomization seed')
+    parser.add_argument('--seed', type=int, required=False, default=0, help='randomization seed')
     parser.add_argument('--is_training', type=int, required=True, default=1, help='status')
     parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
     parser.add_argument('--model', type=str, required=True, default='Autoformer',
@@ -88,13 +87,13 @@ def main():
     parser.add_argument('--experiment_tag', type=str, default='e0_untagged_experiment', help='wandb project')
 
     # Constrained
-    parser.add_argument('--constraint_type', type=str, help='Constraint type (erm,constant,static_linear,dynamic_linear,resilience,monotonic)')
+    parser.add_argument('--constraint_type', type=str, default="erm", help='Constraint type (erm,constant,static_linear,dynamic_linear,resilience,monotonic)')
     parser.add_argument('--constraint_level', type=float, help='Constraint level (epsilon) if using constant constraint_type')    
     parser.add_argument('--constraint_slope', type=float, help='Constraint slope if using static_linear or dynamic_linear')
     parser.add_argument('--constraint_offset', type=float, help='Constraint offset if using static_linear or dynamic_linear')
-    parser.add_argument('--dual_lr',  type=float, help='dual learning rate')
-    parser.add_argument('--dual_init',  type=float, help='dual var initialization')
-    parser.add_argument('--dual_clip',  type=float, default=10.0, help='clip dual variables')
+    parser.add_argument('--dual_lr',  type=float,default=0.0 , help='dual learning rate')
+    parser.add_argument('--dual_init',  type=float,default=0.0 , help='dual var initialization')
+    parser.add_argument('--dual_clip',  type=float, default=10.0 , help='clip dual variables')
     parser.add_argument('--sampling', action='store_true', default=False, help='Wether sample time steps in Lagrangian')
 
     # Resilient
@@ -121,8 +120,16 @@ def main():
     parser.add_argument('--seg_len', type=int, default=48, help='segment length of time series')
     parser.add_argument('--num_blocks', type=int, default=3, help='number of Koopa blocks')
     parser.add_argument('--alpha', type=float, default=0.2, help='spectrum filter ratio')
-    #parser.add_argument('--multistep', action='store_true', help='whether to use approximation for multistep K', default=False)
     parser.add_argument('--multistep', type=bool, help='whether to use approximation for multistep K', default=False)
+    parser.add_argument('--top_k', type=int, help='topk', default=5)
+    parser.add_argument('--num_kernels', type=int, default=6, help='for Inception')
+    # de-stationary projector params
+    parser.add_argument('--p_hidden_dims', type=int, nargs='+', default=[128, 128],
+                        help='hidden layer dimensions of projector (List)')
+    parser.add_argument('--p_hidden_layers', type=int, default=2, help='number of hidden layers in projector')
+
+    parser.add_argument('--task_name', type=str, required=False, default='long_term_forecast',
+                        help='for compatibility')
 
     args = parser.parse_args()
     

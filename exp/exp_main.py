@@ -1,7 +1,7 @@
 
 from data_provider.data_factory import data_provider
 from exp.exp_basic import Exp_Basic
-from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST,Koopa
+from models import Informer, Autoformer, Transformer, Reformer, Linear,DLinear,PatchTST,Koopa,Pyraformer,FEDformer,Nonstationary_Transformer,TimesNet, MICN, FiLM, iTransformer
 from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
@@ -42,6 +42,13 @@ class Exp_Main(Exp_Basic):
             'DLinear': DLinear,
             'PatchTST': PatchTST,
             'Koopa': Koopa,
+            'Pyraformer': Pyraformer,
+            'FEDformer': FEDformer,
+            'Nonstationary_Transformer': Nonstationary_Transformer,
+            'TimesNet': TimesNet,
+            'MICN': MICN,
+            'FiLM': FiLM,
+            'iTransformer': iTransformer,
     }
     
     def _get_mask_spectrum(self):
@@ -105,7 +112,7 @@ class Exp_Main(Exp_Basic):
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
 
-        # Initializing multipliers for constraint optimization
+        # Initializing multipliers for constraint optimization]
         multipliers = torch.ones(self.args.pred_len-(self.args. constraint_type == "monotonic"), device=self.device)*self.args.dual_init
         slacks = torch.zeros(self.args.pred_len-(self.args.constraint_type == "monotonic"), device=self.device)
         
@@ -117,6 +124,8 @@ class Exp_Main(Exp_Basic):
 
         path = os.path.join(self.args.checkpoints, setting)
         if not os.path.exists(path):
+            if len(os.path.basename(path))>50:
+                path = os.path.join(os.path.dirname(path), os.path.basename(path)[-50:])
             os.makedirs(path)
 
         time_now = time.time()
@@ -570,7 +579,10 @@ class Exp_Main(Exp_Basic):
 
         preds = []
         trues = []
-        folder_path = './test_results/' + setting + '/'
+        if len(setting)>30:
+            folder_path = './test_results/' + setting[-30:] + '/'
+        else:
+            folder_path = './test_results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -622,7 +634,10 @@ class Exp_Main(Exp_Basic):
         print('test shape:', preds.shape, trues.shape)
 
         # result save
-        folder_path = './results/' + setting + '/'
+        if len(setting)>30:
+            folder_path = './results/' + setting[-30:] + '/'
+        else:
+            folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
@@ -690,7 +705,10 @@ class Exp_Main(Exp_Basic):
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
 
         # result save
-        folder_path = './results/' + setting + '/'
+        if len(setting)>30:
+            folder_path = './results/' + setting[-30:] + '/'
+        else:
+            folder_path = './results/' + setting + '/'
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
