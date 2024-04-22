@@ -4,19 +4,20 @@ Script to run sweeps 2.0. Before, we used YAMLs. Now we use the wandb API on pyt
 import yaml
 import os
 import wandb
+from functools import reduce
 
 ###### SCRIPT PARAMETERS
 
 WANDB_PROJECT="Autoformer"
-#WANDB_PROJECT="Autoformer-javierdev"
+# WANDB_PROJECT="Autoformer-javierdev"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-SWEEP_NAME_PREFIX="ICML_Constrained_NewDatasets"
-EXPERIMENT_TAG="e31_icml_constrained_newdatasets_val"
-EXPERIMENT_DESCRIPTION='Constrained Trained New Datasets'
+SWEEP_NAME_PREFIX="ICML_Constrained_NewDatNewMod"
+EXPERIMENT_TAG="e33_icml_constrained_newdatasets_newmodels"
+EXPERIMENT_DESCRIPTION='Constrain val new DS Models'
 
 # Constraint parameters
 # Constant
@@ -24,14 +25,12 @@ EXPERIMENT_DESCRIPTION='Constrained Trained New Datasets'
 CONSTRAINT_TYPE='constant'
 #CONSTRAINT_TYPE='monotonic'
 #CONSTRAINT_TYPE='static_linear'
+# DUAL_LR=0.01
+# DUAL_INIT=1.0
 
-DUAL_LR=0.01
-DUAL_INIT=1.0
-
-#CONSTRAINT_TYPE='erm'
-# DUAL_LR=0.0
-# DUAL_INIT=0.0
-
+# CONSTRAINT_TYPE='erm'
+DUAL_LR=0.0
+DUAL_INIT=0.0
 
 # Required if Resilience
 # RESILIENT_LR=0.1
@@ -39,21 +38,26 @@ DUAL_INIT=1.0
 RESILIENT_LR=0.0
 
 #PROD PARAMETERS
-MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
+#MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
+MODELS = [
+  "Pyraformer",
+  "Nonstationary_Transformer",
+  "iTransformer"
+]
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
     raise ValueError("PatchtTST Must be run separately because of its unique parameters")
-# DATASETS=[
-#   #"weather.csv","electricity.csv","exchange_rate.csv",
-#   "traffic.csv", 
-#   #"ETTh1.csv","ETTh2.csv","ETTm1.csv","ETTm2.csv"
-#   ]
-# PRED_LENGTHS = [96,192,336,720]
-
-DATASETS=["national_illness.csv"] # Must be run on its own
-PRED_LENGTHS = [24, 36, 48, 60] # For ILI dataset
-
+DATASETS=[
+  #"weather.csv","electricity.csv","exchange_rate.csv",
+  #"traffic.csv", 
+  "ETTh1.csv", "ETTh2.csv","ETTm1.csv","ETTm2.csv",
+  "national_illness.csv"
+  ]
+# The script will use one of these based on the dataset. You can change these lists to only run for some pred lengths.
+STANDARD_PRED_LENGTHS = [96, 192, 336, 720]
+ILLNESS_PRED_LENGTHS = [24, 36, 48, 60] # For illness dataset
+  
 NUM_SEEDS=1
 # SEED=0 # IF 0 THEN RANDOM SEED
 SEED=2021 # The seed used by the literature
@@ -432,6 +436,139 @@ DATASET_DEPENDENT={
 #    336: [0.581, 0.705, 0.762],
 #    720: [0.691, 0.808, 0.926]}}}
 
+# New datasets new models train
+# Train
+# CONSTRAINT_DATA={'ETTh1.csv': {'Nonstationary_Transformer': {96: [0.128, 0.133, 0.135],
+#    192: [0.166, 0.168, 0.17],
+#    336: [0.189, 0.191, 0.194],
+#    720: [0.226, 0.233, 0.236]},
+#   'Pyraformer': {96: [0.249, 0.261, 0.27],
+#    192: [0.28, 0.284, 0.288],
+#    336: [0.297, 0.301, 0.306],
+#    720: [0.33, 0.336, 0.34]},
+#   'iTransformer': {96: [0.249, 0.298, 0.337],
+#    192: [0.32, 0.379, 0.434],
+#    336: [0.398, 0.459, 0.505],
+#    720: [0.51, 0.572, 0.634]}},
+#  'ETTh2.csv': {'Nonstationary_Transformer': {96: [0.086, 0.099, 0.114],
+#    192: [0.112, 0.145, 0.169],
+#    336: [0.147, 0.194, 0.239],
+#    720: [0.227, 0.329, 0.401]},
+#   'Pyraformer': {96: [0.135, 0.148, 0.157],
+#    192: [0.158, 0.168, 0.176],
+#    336: [0.183, 0.191, 0.201],
+#    720: [0.222, 0.235, 0.253]},
+#   'iTransformer': {96: [0.154, 0.199, 0.24],
+#    192: [0.22, 0.297, 0.338],
+#    336: [0.306, 0.38, 0.459],
+#    720: [0.419, 0.575, 0.729]}},
+#  'ETTm1.csv': {'Nonstationary_Transformer': {96: [0.054, 0.058, 0.059],
+#    192: [0.07, 0.073, 0.08],
+#    336: [0.083, 0.092, 0.098],
+#    720: [0.115, 0.123, 0.132]},
+#   'Pyraformer': {96: [0.131, 0.143, 0.155],
+#    192: [0.165, 0.175, 0.184],
+#    336: [0.192, 0.204, 0.211],
+#    720: [0.23, 0.237, 0.243]},
+#   'iTransformer': {96: [0.164, 0.191, 0.201],
+#    192: [0.218, 0.226, 0.278],
+#    336: [0.243, 0.292, 0.332],
+#    720: [0.325, 0.379, 0.423]}},
+#  'ETTm2.csv': {'Nonstationary_Transformer': {96: [0.038, 0.043, 0.049],
+#    192: [0.052, 0.061, 0.073],
+#    336: [0.066, 0.086, 0.099],
+#    720: [0.102, 0.124, 0.192]},
+#   'Pyraformer': {96: [0.074, 0.084, 0.092],
+#    192: [0.09, 0.096, 0.111],
+#    336: [0.102, 0.11, 0.118],
+#    720: [0.123, 0.133, 0.136]},
+#   'iTransformer': {96: [0.083, 0.108, 0.128],
+#    192: [0.123, 0.157, 0.191],
+#    336: [0.17, 0.223, 0.261],
+#    720: [0.245, 0.313, 0.408]}},
+#  'national_illness.csv': {'Nonstationary_Transformer': {24: [0.36,
+#     0.38,
+#     0.403],
+#    36: [0.36, 0.396, 0.419],
+#    48: [0.445, 0.465, 0.474],
+#    60: [0.412, 0.457, 0.473]},
+#   'Pyraformer': {24: [0.296, 0.301, 0.31],
+#    36: [0.321, 0.327, 0.336],
+#    48: [0.342, 0.352, 0.374],
+#    60: [0.372, 0.385, 0.41]},
+#   'iTransformer': {24: [0.314, 0.383, 0.395],
+#    36: [0.4, 0.413, 0.42],
+#    48: [0.419, 0.442, 0.453],
+#    60: [0.442, 0.462, 0.479]}}
+#  }
+
+
+
+# New datasets new models val
+CONSTRAINT_DATA={'ETTh1.csv': {'Nonstationary_Transformer': {96: [0.422, 0.451, 0.459],
+   192: [0.481, 0.531, 0.596],
+   336: [0.577, 0.639, 0.743],
+   720: [0.579, 0.648, 0.72]},
+  'Pyraformer': {96: [0.363, 0.43, 0.5],
+   192: [0.458, 0.544, 0.618],
+   336: [0.547, 0.692, 0.895],
+   720: [0.881, 1.053, 1.187]},
+  'iTransformer': {96: [0.321, 0.379, 0.412],
+   192: [0.364, 0.419, 0.439],
+   336: [0.411, 0.446, 0.483],
+   720: [0.397, 0.431, 0.466]}},
+ 'ETTh2.csv': {'Nonstationary_Transformer': {96: [0.281, 0.371, 0.4],
+   192: [0.472, 0.517, 0.638],
+   336: [0.384, 0.523, 0.559],
+   720: [0.413, 0.437, 0.492]},
+  'Pyraformer': {96: [0.359, 0.766, 1.181],
+   192: [1.117, 1.519, 3.002],
+   336: [1.128, 1.631, 1.887],
+   720: [0.595, 0.682, 0.772]},
+  'iTransformer': {96: [0.239, 0.335, 0.373],
+   192: [0.32, 0.394, 0.474],
+   336: [0.352, 0.478, 0.503],
+   720: [0.373, 0.4, 0.425]}},
+ 'ETTm1.csv': {'Nonstationary_Transformer': {96: [0.314, 0.351, 0.365],
+   192: [0.35, 0.394, 0.433],
+   336: [0.366, 0.452, 0.518],
+   720: [0.468, 0.514, 0.555]},
+  'Pyraformer': {96: [0.393, 0.427, 0.484],
+   192: [0.409, 0.452, 0.474],
+   336: [0.432, 0.468, 0.55],
+   720: [0.503, 0.688, 0.744]},
+  'iTransformer': {96: [0.284, 0.319, 0.323],
+   192: [0.313, 0.323, 0.399],
+   336: [0.315, 0.395, 0.45],
+   720: [0.381, 0.486, 0.503]}},
+ 'ETTm2.csv': {'Nonstationary_Transformer': {96: [0.148, 0.19, 0.234],
+   192: [0.191, 0.296, 0.376],
+   336: [0.277, 0.369, 0.381],
+   720: [0.402, 0.437, 0.456]},
+  'Pyraformer': {96: [0.172, 0.202, 0.218],
+   192: [0.242, 0.256, 0.341],
+   336: [0.358, 0.486, 0.908],
+   720: [0.399, 1.115, 1.538]},
+  'iTransformer': {96: [0.127, 0.178, 0.21],
+   192: [0.175, 0.234, 0.336],
+   336: [0.226, 0.35, 0.397],
+   720: [0.353, 0.421, 0.479]}},
+ 'national_illness.csv': {'Nonstationary_Transformer': {24: [0.296,
+    0.374,
+    0.425],
+   36: [0.242, 0.291, 0.332],
+   48: [0.251, 0.344, 0.443],
+   60: [0.209, 0.267, 0.602]},
+  'Pyraformer': {24: [0.219, 0.257, 0.291],
+   36: [0.185, 0.218, 0.24],
+   48: [0.167, 0.208, 0.291],
+   60: [0.114, 0.216, 0.317]},
+  'iTransformer': {24: [0.222, 0.242, 0.259],
+   36: [0.181, 0.217, 0.296],
+   48: [0.164, 0.235, 0.32],
+   60: [0.142, 0.195, 0.423]}}
+}
+
 CONSTRAINT_PARAMS={
   'constraint_level': {'values': []},#will fail if not set later.
   'constraint_type': {'value': CONSTRAINT_TYPE},
@@ -522,9 +659,15 @@ if CONSTRAINT_TYPE is not 'erm':
   # By definition, must run one at a time because the gridsearch is along constraint levels.
   # CONSRTTRAINED
   print(f"Starting sweep generation for constrained run of type {CONSTRAINT_TYPE}")
-  sweep_commands = []
+  sweep_ids = []
   for num_seed in range(1,NUM_SEEDS+1):
     for data_path in DATASETS:
+      if data_path == 'national_illness.csv':
+        PRED_LENGTHS = ILLNESS_PRED_LENGTHS
+      else:
+        PRED_LENGTHS = STANDARD_PRED_LENGTHS
+      print(f"Generating sweep for {data_path} with pred lengths")
+      print(PRED_LENGTHS)
       for model in MODELS:
           for pred_len in PRED_LENGTHS:
                 sweep_config = TEMPLATE.copy()
@@ -562,27 +705,12 @@ if CONSTRAINT_TYPE is not 'erm':
                 #Update description, including params & seed number
                 #print(sweep_config)
                 sweep_id = wandb.sweep(sweep_config)
-                sweep_commands.append(sweep_id)
+                sweep_ids.append(sweep_id)
                 # Write YAML file for debugging, with overwrite
                 YAML_FILENAME=f"sweep_{data_path_nodot}_{model}_{pred_len}_seed{num_seed}.yaml"
                 #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
                 with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
                     yaml.dump(sweep_config,f,sort_keys=False)
-  print("Run the following commands: \n\n")
-  #print(sweep_commands)
-  from functools import reduce
-  # result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
-  # print(result)
-  # print ("\n Done")
-  agents_array = reduce(lambda x, y: f"{x} {y}", sweep_commands)
-  sweep_command=f"""
-  agents=({agents_array})
-  for agent in "${{agents[@]}}"
-  do
-    wandb agent "{NAMESPACE}/{WANDB_PROJECT}/$agent"
-  done
-  """
-  print(sweep_command)
 elif CONSTRAINT_TYPE=='erm':
   #########
   ###########################
@@ -600,7 +728,7 @@ elif CONSTRAINT_TYPE=='erm':
     'dual_lr': {'value': 0.0},
   }
 
-  sweep_commands = []
+  sweep_ids = []
   for num_seed in range(1,NUM_SEEDS+1):
     for data_path in DATASETS:
       sweep_config = TEMPLATE.copy()
@@ -609,7 +737,7 @@ elif CONSTRAINT_TYPE=='erm':
       sweep_config['parameters']['wandb_run'] = {'value': f"AllModels_{data_path}/ERM"}
       sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
       sweep_config["parameters"]["model"] = {"values": MODELS}
-      sweep_config["parameters"]["pred_len"] = {"values": PRED_LENGTHS}
+      sweep_config["parameters"]["pred_len"] = {"values": ["PLACEHOLDER"]}
       #data_path replace .csv with ''
       sweep_config["parameters"]["model_id"] = {"value": f"{data_path.replace('.csv','')}_erm"}
 
@@ -621,16 +749,23 @@ elif CONSTRAINT_TYPE=='erm':
       #print(sweep_config)
       
       sweep_id = wandb.sweep(sweep_config)
-      sweep_commands.append(f"wandb agent {NAMESPACE}/{WANDB_PROJECT}/{sweep_id}")
+      sweep_ids.append(sweep_id)
       # Write YAML file for debugging, with overwrite
       YAML_FILENAME=f"sweep_erm_{data_path}_all_models_seed{SEED}.yaml"
       #print(f"YAML can be debugged in {YAML_DEBUG_LOCATION+YAML_FILENAME}")
       with open(YAML_DEBUG_LOCATION+YAML_FILENAME,'w') as f:
           yaml.dump(sweep_config,f,sort_keys=False)
-  from functools import reduce
-  result = reduce(lambda x, y: f"{x} && {y}", sweep_commands)
-  print(result)
-  print ("\n Done")
+# PRINTING THE RESULTING GENERATED AGENT IDs
+agents_array = reduce(lambda x, y: f"{x} {y}", sweep_ids)
+sweep_command=f"""
+agents=({agents_array})
+for agent in "${{agents[@]}}"
+do
+  wandb agent "{NAMESPACE}/{WANDB_PROJECT}/$agent"
+done
+"""
+print("Run the following commands: \n\n")
+print(sweep_command)
   ###########################
   ###########################
   ###########################
