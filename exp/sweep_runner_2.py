@@ -15,20 +15,20 @@ YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-SWEEP_NAME_PREFIX="ICML_Constrained_NewDatNewMod"
-EXPERIMENT_TAG="e33_icml_constrained_newdatasets_newmodels"
-EXPERIMENT_DESCRIPTION='Constrain val new DS Models'
+SWEEP_NAME_PREFIX="ICML_ERM_NewDatNewMod"
+EXPERIMENT_TAG="e32_icml_erm_newdatasets_newmodels"
+EXPERIMENT_DESCRIPTION='ERM FiLM'
 
 # Constraint parameters
 # Constant
 #CONSTRAINT_TYPE='resilience'
-CONSTRAINT_TYPE='constant'
+# CONSTRAINT_TYPE='constant'
 #CONSTRAINT_TYPE='monotonic'
 #CONSTRAINT_TYPE='static_linear'
 # DUAL_LR=0.01
 # DUAL_INIT=1.0
 
-# CONSTRAINT_TYPE='erm'
+CONSTRAINT_TYPE='erm'
 DUAL_LR=0.0
 DUAL_INIT=0.0
 
@@ -40,18 +40,22 @@ RESILIENT_LR=0.0
 #PROD PARAMETERS
 #MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
 MODELS = [
-  "Pyraformer",
-  "Nonstationary_Transformer",
-  "iTransformer"
+  # "Pyraformer",
+  # "Nonstationary_Transformer",
+  # "iTransformer"
+  "FiLM"
 ]
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
     raise ValueError("PatchtTST Must be run separately because of its unique parameters")
 DATASETS=[
-  #"weather.csv","electricity.csv","exchange_rate.csv",
-  #"traffic.csv", 
-  "ETTh1.csv", "ETTh2.csv","ETTm1.csv","ETTm2.csv",
+  "weather.csv",
+  # "electricity.csv",
+  # "exchange_rate.csv",
+  "traffic.csv", 
+  "ETTh1.csv", 
+  "ETTh2.csv","ETTm1.csv","ETTm2.csv",
   "national_illness.csv"
   ]
 # The script will use one of these based on the dataset. You can change these lists to only run for some pred lengths.
@@ -502,8 +506,6 @@ DATASET_DEPENDENT={
 #    60: [0.442, 0.462, 0.479]}}
 #  }
 
-
-
 # New datasets new models val
 CONSTRAINT_DATA={'ETTh1.csv': {'Nonstationary_Transformer': {96: [0.422, 0.451, 0.459],
    192: [0.481, 0.531, 0.596],
@@ -731,13 +733,17 @@ elif CONSTRAINT_TYPE=='erm':
   sweep_ids = []
   for num_seed in range(1,NUM_SEEDS+1):
     for data_path in DATASETS:
+      if data_path == 'national_illness.csv':
+        PRED_LENGTHS = ILLNESS_PRED_LENGTHS
+      else:
+        PRED_LENGTHS = STANDARD_PRED_LENGTHS
       sweep_config = TEMPLATE.copy()
       sweep_config['name'] = f"{SWEEP_NAME_PREFIX}_{data_path}_seed{SEED}"
       sweep_config['parameters']['des'] = {'value': f"{EXPERIMENT_DESCRIPTION} ERM epsilon run {data_path} seed{SEED}."}
       sweep_config['parameters']['wandb_run'] = {'value': f"AllModels_{data_path}/ERM"}
       sweep_config["parameters"].update(DATASET_DEPENDENT[data_path])
       sweep_config["parameters"]["model"] = {"values": MODELS}
-      sweep_config["parameters"]["pred_len"] = {"values": ["PLACEHOLDER"]}
+      sweep_config["parameters"]["pred_len"] = {"values": PRED_LENGTHS}
       #data_path replace .csv with ''
       sweep_config["parameters"]["model_id"] = {"value": f"{data_path.replace('.csv','')}_erm"}
 
