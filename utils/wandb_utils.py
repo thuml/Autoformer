@@ -28,10 +28,13 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
 
     # filter runs by 
     all_runs = []
+    missing_cvar_runs = []
     run_counter = 0
     for run in tqdm(runs):
         attempts=0
         while attempts<5:
+            if "pointwise/cvar/0.01" not in run.summary:
+                missing_cvar_runs.append(run.id)
             try:
                 run_dicts = _generate_run_dicts(run,experiment_tags)
                 # Check if run_dict is an empty dict
@@ -51,11 +54,13 @@ def get_experiment_data(project,workspace,experiment_tags=[],state='finished',qu
     df = pd.DataFrame(all_runs)
     print(f"Total records: {(df.shape)}")
     print(f"Total runs: {df.run_id.nunique()}")
+    print(f"Total runs missing cvar {len(missing_cvar_runs)}")
+    print(f"Run IDs missing CVAR: {missing_cvar_runs}")
     return df
 
 def _generate_run_dicts(run,experiment_tags):
-    if "pointwise/cvar/0.01" not in run.summary:
-        print(f"WARNING!! Missing pointwise/cvar/0.01 in run {run.id} on sweep {run.sweep}. Filling all poitwisewith NAN.")
+    # if "pointwise/cvar/0.01" not in run.summary:
+    #     print(f"WARNING!! Missing pointwise/cvar/0.01 in run {run.id} on sweep {run.sweep}. Filling all poitwisewith NAN.")
     run_dicts = []
     for split in ["train", "test","val"]:
         for metric in ["mse"]:
@@ -179,6 +184,8 @@ def generate_constraint_levels(df,split='train'):
         for model in models:
             constraint_data_dict[data_path][model]={}
             pred_lens = constraint_data[(constraint_data.model==model) & (constraint_data.data_path==data_path)].pred_len.unique()
+            if len(pred_lens)==0:
+                del constraint_data_dict[data_path][model] #to not get empty dicts that will break everything
             for pred_len in pred_lens:                
                 constraint_data_dict[data_path][model][pred_len] = constraint_data[(constraint_data.model==model) & (constraint_data.pred_len==pred_len) & (constraint_data.data_path==data_path)][['25%','50%','75%']].values.tolist()[0]
                 # Round to 3 decimals
