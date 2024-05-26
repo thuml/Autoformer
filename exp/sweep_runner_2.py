@@ -8,17 +8,17 @@ from functools import reduce
 
 ###### SCRIPT PARAMETERS
 
-#WANDB_PROJECT="Autoformer"
-WANDB_PROJECT="Autoformer-javierdev"
+WANDB_PROJECT="Autoformer"
+#WANDB_PROJECT="Autoformer-javierdev"
 NAMESPACE="alelab"
 YAML_DEBUG_LOCATION="../generated_sweeps/"
 if not os.path.exists(YAML_DEBUG_LOCATION):
     os.makedirs(YAML_DEBUG_LOCATION)
 
-SWEEP_NAME_PREFIX="ICML_Constrained_NewModOldDat"
-EXPERIMENT_DESCRIPTION='Constrained NewModOldDat'
+SWEEP_NAME_PREFIX="ICML_CONSTR_RES_GAPS"
+EXPERIMENT_DESCRIPTION='Constrained And Resilient Gaps'
 #EXPERIMENT_TAG="e34_icml_resilience_newdatasets_newmodels"
-EXPERIMENT_TAG="e29_icml_constrained_newmodels"
+EXPERIMENT_TAG="e35_icml_const_and_resilience_gaps"
 
 # Constraint parameters
 # Constant
@@ -34,20 +34,33 @@ DUAL_INIT=1.0
 # DUAL_INIT=0.0
 
 # Required if Resilience
-#RESILIENT_LR=0.1
-# Use if monotonic_no_resilience
+# RESILIENT_LR=0.1
 RESILIENT_LR=0.0
 
 #PROD PARAMETERS
 # OLD MODELS
 #MODELS = ["Pyraformer"]#["Autoformer","Reformer","Informer","Transformer"]
 # NEW MODELS
+# MODELS = [
+  #"Pyraformer",
+  # "Nonstationary_Transformer",
+  # "iTransformer",
+  #"FiLM"
+# ]
+
+# ALLMODELS
 MODELS = [
-  "Pyraformer",
-  "Nonstationary_Transformer",
-  "iTransformer",
+  # "Autoformer",
+  # "Reformer",
+  # "Informer",
+  # "Transformer",
+  # "Pyraformer",
+  # "Nonstationary_Transformer",
+  # "iTransformer",
   "FiLM"
 ]
+
+
 #MODELS = ["PatchTST"] #Must run by itself
 # MODELS = ["Koopa"]
 if len(MODELS)>1 and "PatchTST" in MODELS:
@@ -55,20 +68,32 @@ if len(MODELS)>1 and "PatchTST" in MODELS:
 DATASETS=[
   # "weather.csv",
   # "electricity.csv",
-  "exchange_rate.csv",
-  # "traffic.csv", 
-  # "ETTh1.csv", 
-  # "ETTh2.csv","ETTm1.csv","ETTm2.csv",
+  # "exchange_rate.csv",
+  # "traffic.csv",
+  "ETTh1.csv", 
+  "ETTh2.csv",
+  "ETTm1.csv",
+  "ETTm2.csv",
   # "national_illness.csv"
-  ]
+]
 # The script will use one of these based on the dataset. You can change these lists to only run for some pred lengths.
-STANDARD_PRED_LENGTHS = [96, 192, 336, 720]
-ILLNESS_PRED_LENGTHS = [24, 36, 48, 60] # For illness dataset
+STANDARD_PRED_LENGTHS = [
+96,
+192,
+336,
+720
+]
+
+ILLNESS_PRED_LENGTHS = [
+  24,
+ 36,
+ 48,
+ 60] # For illness dataset
   
 NUM_SEEDS=1
 # SEED=0 # IF 0 THEN RANDOM SEED
 SEED=2021 # The seed used by the literature
-#SEED=6163 # Seed 2.
+# SEED=6163 # Seed 2.
 # SEED=3589 # Seed 3.
 
 #END PARAMETERS
