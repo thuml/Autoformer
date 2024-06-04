@@ -89,6 +89,10 @@ class Exp_Main(Exp_Basic):
         device = self.device
         if self.args.constraint_type == "static_linear" or self.args.constraint_type == "dynamic_linear":
             constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(device)
+        elif self.args.constraint_type == "static_exponential":
+            # a*exp(b*x) (a is slope, b is offset). Just to keep the same interface as linear.
+            steps = torch.arange(self.args.pred_len).float().to(device)
+            constraint_levels  = (self.args.constraint_slope*torch.exp(self.args.constraint_offset*steps)).to(device)
         elif self.args.constraint_type == "constant" or self.args.constraint_type == "resilience":
             #TODO run and test that dimensions match the above.
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
@@ -198,7 +202,7 @@ class Exp_Main(Exp_Basic):
                 # Constraint optimization
                 if self.args.constraint_type == "erm":
                     constrained_loss = raw_loss.mean()
-                elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type =="resilience":
+                elif self.args.constraint_type == "constant" or self.args.constraint_type == "static_linear" or self.args.constraint_type == "static_exponential" or self.args.constraint_type =="resilience":
                     if not self.args.sampling:
                         constrained_loss = ((multipliers + 1/self.args.pred_len) * raw_loss).sum()
                     else:
