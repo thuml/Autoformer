@@ -54,10 +54,10 @@ MODELS = [
   # "Reformer",
   # "Informer",
   # "Transformer",
-  # "Pyraformer",
-  # "Nonstationary_Transformer",
-  # "iTransformer",
-  "FiLM"
+  "Pyraformer",
+  "Nonstationary_Transformer",
+  "iTransformer",
+  #  "FiLM"
 ]
 
 
@@ -66,14 +66,14 @@ MODELS = [
 if len(MODELS)>1 and "PatchTST" in MODELS:
     raise ValueError("PatchtTST Must be run separately because of its unique parameters")
 DATASETS=[
-  # "weather.csv",
+  "weather.csv",
   # "electricity.csv",
   # "exchange_rate.csv",
   # "traffic.csv",
-  "ETTh1.csv", 
-  "ETTh2.csv",
-  "ETTm1.csv",
-  "ETTm2.csv",
+  # "ETTh1.csv", 
+  # "ETTh2.csv",
+  # "ETTm1.csv",
+  # "ETTm2.csv",
   # "national_illness.csv"
 ]
 # The script will use one of these based on the dataset. You can change these lists to only run for some pred lengths.
