@@ -15,7 +15,6 @@ parameters:
     value: "Electricity-ConstrainedWTrain-10e-Informer"
   train_epochs:
     value: 10
-  # electricity.csv, pred_len=192, Informer
   constraint_level:
     values: [0.188, 0.193, 0.198]
   model:

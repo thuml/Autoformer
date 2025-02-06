@@ -1,6 +1,17 @@
 from utils import wandb_utils
 
 def backup_experiment_data(experiment_tags, filename_prefix):
+        """
+        Experiment Utility that queries W&B for finished experiments matching the provided tags, downloads the data,
+        and saves to CSV, pickle.
+        
+        Args:
+            experiment_tags (list): List of tags to filter W&B experiments
+            filename_prefix (str): Prefix for the output filenames
+            
+        Returns:
+            pandas.DataFrame: The retrieved experiment data as a pandas DataFrame
+        """
         backup_data_filename = filename_prefix
         backup_data_pickle_filename = filename_prefix + ".pkl"
         backup_data_csv_filename = filename_prefix + ".csv"

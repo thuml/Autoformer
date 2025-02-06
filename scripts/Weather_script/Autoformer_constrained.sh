@@ -1,5 +1,5 @@
 export CUDA_VISIBLE_DEVICES=0
-WANDB_PROJECT='Autoformer-javierdev'
+WANDB_PROJECT='Autoformer-dev'
 
 #WANDB_RUN_NAME='Constrained'
 WANDB_RUN_NAME='Constrained-newloss'

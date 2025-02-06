@@ -18,7 +18,7 @@ parameters:
   train_epochs:
     value: 10
   constraint_level:
-    values: [0.157, 0.169, 0.170] #TODO change
+    values: [0.157, 0.169, 0.170] 
   dual_init:
     value: 1.0
   dual_lr:

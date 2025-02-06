@@ -9,6 +9,10 @@ from datetime import datetime
 
 
 def main():
+    """
+    Main entry point for running time series forecasting experiments. 
+    Refer to the README for example usage.
+    """
 
     parser = argparse.ArgumentParser(description='Autoformer & Transformer family for Time Series Forecasting')
 

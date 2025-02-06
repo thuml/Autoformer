@@ -1,5 +1,4 @@
-# Javier 2023-08-16: Use este para la primera corrida y luego le instale manualmente reformer_pytorch
-name: autoformer
+name: loss-shaping
 channels:
   - conda-forge
   - pytorch
@@ -11,12 +10,10 @@ dependencies:
   - numpy
   - pandas
   - scikit-learn
-  # Nacho extra req
   - wandb
   - seaborn
   - tqdm
-  # - cycler # Actually not used
+  - sympy
   - pip:
     - torch==1.9.0
-    # reformer_pytorch #TODO nacho tiene este en el requirements.txt.
-
+    - reformer_pytorch

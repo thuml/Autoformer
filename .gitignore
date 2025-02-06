@@ -128,7 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Javier ignore
 checkpoints
 dataset/
 results/

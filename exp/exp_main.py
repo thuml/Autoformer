@@ -6,7 +6,6 @@ from utils.tools import EarlyStopping, adjust_learning_rate, visual
 from utils.metrics import metric
 
 import numpy as np
-import scipy
 from scipy.stats import pearsonr
 import torch
 import torch.nn as nn
@@ -27,12 +26,20 @@ warnings.filterwarnings('ignore')
 
 
 class Exp_Main(Exp_Basic):
+    """
+    Main experiment runner class for time series forecasting models, modified from the original Autoformer repo.
+
+    This class handles training, validation, testing, and prediction pipeline for various
+    time series forecasting models including Transformer variants (Autoformer, Informer, etc.) 
+    It supports various constrained learning training modes (ERM, linear, constant, monotonic). 
+    Logs metrics to W&B. For usage instructions refer to the project README.md.
+    """
     def __init__(self, args):
         super(Exp_Main, self).__init__(args)
         if self.args.use_amp:
             raise Exception("This repo does not support AMP. ")
 
-    #to be able to load back the modelb
+    #to be able to load back the model
     MODEL_DICT={
             'Autoformer': Autoformer,
             'Transformer': Transformer,
@@ -90,19 +97,15 @@ class Exp_Main(Exp_Basic):
         if self.args.constraint_type == "static_linear" or self.args.constraint_type == "dynamic_linear":
             constraint_levels = (torch.arange(self.args.pred_len)*self.args.constraint_slope+ self.args.constraint_offset).to(device)
         elif self.args.constraint_type == "static_exponential":
-            # a*exp(b*x) (a is slope, b is offset). Just to keep the same interface as linear.
+            # a*exp(b*x) (a is slope, b is offset). To keep the same interface as linear.
             steps = torch.arange(self.args.pred_len).float().to(device)
             constraint_levels  = (self.args.constraint_slope*torch.exp(self.args.constraint_offset*steps)).to(device)
         elif self.args.constraint_type == "constant" or self.args.constraint_type == "resilience":
-            #TODO run and test that dimensions match the above.
             constraint_levels = (torch.ones(self.args.pred_len, device=device)*self.args.constraint_level).to(device)
         elif self.args.constraint_type == "erm" or self.args.constraint_type == "monotonic":
             constraint_levels = torch.zeros(self.args.pred_len, device=device).to(device)
         else: 
-            #raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
-            print(f"WARNING RUNNING WITH UNSUPPORTED CONSTRAINT TYPE {self.args.constraint_type}!!!!")
-        #TODO add monotonic constraint levels. 
-        #return constraint_levels
+            raise ValueError(f"{self.args.constraint_type} Constraint type not implemented yet.")
         return constraint_levels.detach() #Don't really need gradients for it
 
     def _select_criterion(self):
@@ -209,8 +212,6 @@ class Exp_Main(Exp_Basic):
                         probabilities = (multipliers + 1/self.args.pred_len).unsqueeze(0).repeat(batch_x.shape[0],1)
                         sampled_indexes = torch.multinomial(probabilities, self.args.pred_len, replacement=True)
                         constrained_loss = raw_loss[sampled_indexes].mean()
-                    #TODO uncomment for dual restarts
-                    #multipliers = multipliers * (raw_loss > constraint_levels).float()
                     multipliers += self.args.dual_lr * (detached_raw_loss - (constraint_levels+slacks))
                     multipliers = torch.clip(multipliers, 0.0, self.args.dual_clip)
                 elif self.args.constraint_type == "monotonic":
@@ -247,9 +248,7 @@ class Exp_Main(Exp_Basic):
                         scheduler.step()
 
                     if (i + 1) % self.args.eval_steps == 0:
-                        #TODO address duplicates between this and end of epoch.
-                        # Calculating how many violate feasibility
-                        # TODO WARNING this will only work in the constant case.
+                        # Infeasible rate metric only implemented for constant/monotonic cases
                         if self.args.constraint_type == "monotonic":
                             train_num_infeasibles = (detached_raw_loss[1:] > detached_raw_loss[:-1]).sum()
                         else:
@@ -345,7 +344,7 @@ class Exp_Main(Exp_Basic):
 
             print(f"Number of infeasibilities: {train_num_infeasibles}/{self.args.pred_len} rate {train_infeasible_rate}")
 
-            #Run validation set again for epoch logging. TODO remove code duplication.
+            #Run validation set again for epoch logging.
             vali_loss, vali_losses, val_metrics, val_infeasibilities, val_avg_infeasiblity_rate, val_loss_distr_metrics, val_loss_distr_metrics_per_timestep = self.vali(vali_data, vali_loader, criterion)
             
             # Append /val to the val_loss_distr_metrics
@@ -396,9 +395,6 @@ class Exp_Main(Exp_Basic):
 
             # Early stopping, checkpointing, LR adj
             early_stopping(vali_loss, self.model, path) #must keep this even if we don't early stop, to save best model.
-            # if early_stopping.early_stop:
-            #     print(f"Early stopping at epoch {epoch}")
-            #     break
             if early_stopping.early_stop and not early_stopped_before:
                 print(f"Early stopping triggered at epoch {epoch+1}. Will continue training.")
                 wandb.log({"early_stopped_epoch":epoch+1, "epoch":epoch+1},commit=False)
@@ -655,23 +651,6 @@ class Exp_Main(Exp_Basic):
         f.close()
 
         np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        # np.save(folder_path + 'pred.npy', preds)
-        # np.save(folder_path + 'true.npy', trues)
-
-        # In case the artifact doesn't work
-        # wandb.log({"test_predictions": preds})
-        # wandb.log({"test_true": trues})
-
-        # Log a table with preds and trues
-        # test_df = pandas.DataFrame(data=np.concatenate([preds, trues], axis=1), columns=[f"pred_{i}" for i in range(preds.shape[1])] + [f"true_{i}" for i in range(trues.shape[1])])
-        # test_df.to_csv("deleteme.csv")
-        # wandb.save("pred.npy")
-        # wandb.log({"test_table": wandb.Table(dataframe=test_df)})
-
-        #in case the log doesn't work
-        # artifact = wandb.Artifact("predictions", type="dataset")
-        # artifact.add_dir(f"{folder_path}/")
-        # wandb.log_artifact(artifact)
         
         return
 

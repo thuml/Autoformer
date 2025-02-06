@@ -18,7 +18,7 @@ python -u run.py \
   --enc-in 21 \
   --dec-in 21 \
   --c-out 21 \
-  --des 'Exp Javier' \
+  --des 'Exp' \
   --itr 1 \
   --train-epochs 3
 
@@ -39,7 +39,7 @@ python -u run.py \
   --enc-in 21 \
   --dec-in 21 \
   --c-out 21 \
-  --des 'Exp Javier' \
+  --des 'Exp' \
   --itr 1
 
 python -u run.py \
@@ -59,7 +59,7 @@ python -u run.py \
   --enc-in 21 \
   --dec-in 21 \
   --c-out 21 \
-  --des 'Exp Javier' \
+  --des 'Exp' \
   --itr 1
 
 python -u run.py \
@@ -79,5 +79,5 @@ python -u run.py \
   --enc-in 21 \
   --dec-in 21 \
   --c-out 21 \
-  --des 'Exp Javier' \
+  --des 'Exp' \
   --itr 1
